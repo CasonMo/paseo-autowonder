@@ -1,9 +1,11 @@
 import type { PluginPopoverProps } from "@getpaseo/plugin/client";
-import { useRpc } from "@getpaseo/plugin/client";
+import { useRpc, useSettings } from "@getpaseo/plugin/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
+import { Text } from "./Text";
 import {
   ackChangesRpc,
+  autowonderSettings,
   refreshChangesRpc,
   WORKITEMS_PER_STATUS,
   type ChangeState,
@@ -13,6 +15,7 @@ import { Button, Divider, Row, textStyle } from "./components";
 import { BOARD_SCREEN } from "./constants";
 import { useChanges, changesQueryKey } from "./changes";
 import { errorMessage, formatDateTime } from "./lib";
+import { I18nProvider, preferenceFromSettings, useI18n } from "./i18n";
 
 function ChangePill({
   label,
@@ -86,12 +89,13 @@ export function ChangeIndicator({
   );
 }
 
-export function ChangePopover({
+function ChangePopoverContent({
   theme,
   layout,
   close,
   openScreen,
 }: PluginPopoverProps) {
+  const { t } = useI18n();
   const changes = useChanges();
   const ack = useRpc(ackChangesRpc);
   const refresh = useRpc(refreshChangesRpc);
@@ -157,28 +161,28 @@ export function ChangePopover({
           <Row gap={5}>
             {data.newCount > 0 ? (
               <ChangePill
-                label={`新增 ${data.newCount}`}
+                label={t("新增 {{count}}", { count: data.newCount })}
                 color={theme.colors.statusSuccess}
                 foreground={theme.colors.surface0}
               />
             ) : null}
             {data.statusCount > 0 ? (
               <ChangePill
-                label={`状态 ${data.statusCount}`}
+                label={t("状态 {{count}}", { count: data.statusCount })}
                 color={theme.colors.statusWarning}
                 foreground={theme.colors.surface0}
               />
             ) : null}
             {data.assigneeCount > 0 ? (
               <ChangePill
-                label={`指派 ${data.assigneeCount}`}
+                label={t("指派 {{count}}", { count: data.assigneeCount })}
                 color={theme.colors.accent}
                 foreground={theme.colors.accentForeground}
               />
             ) : null}
             {data.updatedCount > 0 ? (
               <ChangePill
-                label={`更新 ${data.updatedCount}`}
+                label={t("更新 {{count}}", { count: data.updatedCount })}
                 color={theme.colors.surface2}
                 foreground={theme.colors.foregroundMuted}
               />
@@ -186,9 +190,16 @@ export function ChangePopover({
           </Row>
           <Text style={textStyle(theme, 10, true)}>
             {data.intervalSeconds > 0
-              ? `每 ${data.intervalSeconds} 秒检查一次 · 每个状态最多 ${WORKITEMS_PER_STATUS} 条`
-              : "自动轮询已关闭，可在插件设置中开启"}
-            {data.lastPollAt ? ` · 上次检查 ${formatDateTime(data.lastPollAt)}` : ""}
+              ? t("每 {{interval}} 秒检查一次 · 每个状态最多 {{limit}} 条", {
+                  interval: data.intervalSeconds,
+                  limit: WORKITEMS_PER_STATUS,
+                })
+              : t("自动轮询已关闭，可在插件设置中开启")}
+            {data.lastPollAt
+              ? t(" · 上次检查 {{time}}", {
+                  time: formatDateTime(data.lastPollAt),
+                })
+              : ""}
           </Text>
           {data.error ? (
             <Text style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
@@ -245,6 +256,17 @@ export function ChangePopover({
   );
 }
 
+export function ChangePopover(props: PluginPopoverProps) {
+  const settings = useSettings(autowonderSettings);
+  const preference =
+    settings.status === "ready" ? preferenceFromSettings(settings.values) : "auto";
+  return (
+    <I18nProvider preference={preference}>
+      <ChangePopoverContent {...props} />
+    </I18nProvider>
+  );
+}
+
 function ChangeRow({
   item,
   theme,
@@ -254,6 +276,7 @@ function ChangeRow({
   theme: PluginPopoverProps["theme"];
   onPress: () => void;
 }) {
+  const { t } = useI18n();
   const detail =
     item.changes.includes("status") && item.oldStatusName
       ? `${item.oldStatusName} → ${item.newStatusName ?? "—"}`
@@ -297,7 +320,7 @@ function ChangeRow({
           />
         ))}
         <Text style={{ ...textStyle(theme, 10, true), marginLeft: "auto" }}>
-          {item.workspaceName || `工作区 #${item.workspaceId}`} · #{item.id}
+          {item.workspaceName || t("工作区 #{{id}}", { id: item.workspaceId })} · #{item.id}
         </Text>
       </Row>
       <Text numberOfLines={2} style={{ color: theme.colors.foreground, fontSize: 12 }}>

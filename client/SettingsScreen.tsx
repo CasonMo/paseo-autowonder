@@ -3,7 +3,8 @@ import { useRpc, useSettings } from "@getpaseo/plugin/client";
 import { useToast } from "@getpaseo/plugin/client/react-native";
 import { SettingsSwitch } from "@getpaseo/plugin/client/ui";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { Text } from "./Text";
 import {
   autowonderSettings,
   pingRpc,
@@ -12,14 +13,22 @@ import {
 import {
   Button,
   Card,
+  Chip,
   Divider,
   Input,
   LabeledField,
   Loading,
+  Row,
   SectionHeader,
   textStyle,
 } from "./components";
 import { errorMessage } from "./lib";
+import {
+  I18nProvider,
+  preferenceFromSettings,
+  useI18n,
+  type UiLocalePreference,
+} from "./i18n";
 
 interface TestState {
   ok: boolean;
@@ -33,15 +42,18 @@ function describeTest(result: {
   serverVersion?: string;
   protocolVersion?: string;
   error?: string;
-}): TestState {
-  if (!result.ok) return { ok: false, message: result.error ?? "连接失败" };
+}, t: (text: string, values?: Record<string, string | number | boolean>) => string): TestState {
+  if (!result.ok) return { ok: false, message: result.error ?? t("连接失败") };
   const name = result.serverName ?? "AutoWonder";
   const version = result.serverVersion ? ` ${result.serverVersion}` : "";
   return {
     ok: true,
-    message: `连接成功：${name}${version}，共 ${result.toolCount} 个工具${
-      result.protocolVersion ? `（MCP ${result.protocolVersion}）` : ""
-    }`,
+    message: t("连接成功：{{name}}{{version}}，共 {{count}} 个工具{{protocol}}", {
+      name,
+      version,
+      count: result.toolCount,
+      protocol: result.protocolVersion ? ` (MCP ${result.protocolVersion})` : "",
+    }),
   };
 }
 
@@ -59,10 +71,12 @@ export function SettingsPanel({
   const settings = useSettings(autowonderSettings);
   const ping = useRpc(pingRpc);
   const toast = useToast();
+  const { t } = useI18n();
   const [url, setUrl] = useState("");
   const [pollSeconds, setPollSeconds] = useState("60");
   const [riskRadarEnabled, setRiskRadarEnabled] = useState(true);
   const [documentCliConsent, setDocumentCliConsent] = useState(false);
+  const [uiLocale, setUiLocale] = useState<UiLocalePreference>("auto");
   const [reveal, setReveal] = useState(false);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -79,6 +93,7 @@ export function SettingsPanel({
     setPollSeconds(String(ready.values.pollIntervalSeconds));
     setRiskRadarEnabled(ready.values.riskRadarEnabled);
     setDocumentCliConsent(ready.values.documentCliConsent);
+    setUiLocale(preferenceFromSettings(ready.values));
     setPollError(null);
     setSyncedRevision(ready.revision);
   }, [ready, syncedRevision]);
@@ -117,14 +132,14 @@ export function SettingsPanel({
   }
 
   function validate(value: string): string | null {
-    if (!value) return "请填写 MCP URL";
+    if (!value) return t("请填写 MCP URL");
     try {
       const parsed = new URL(value);
       if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-        return "MCP URL 仅支持 http 或 https";
+        return t("MCP URL 仅支持 http 或 https");
       }
     } catch {
-      return "MCP URL 格式不正确";
+      return t("MCP URL 格式不正确");
     }
     return null;
   }
@@ -144,7 +159,7 @@ export function SettingsPanel({
       interval > 3600 ||
       (interval > 0 && interval < 15)
     ) {
-      setPollError("轮询间隔需为 0 或 15-3600 的整数（0 表示关闭）");
+      setPollError(t("轮询间隔需为 0 或 15-3600 的整数（0 表示关闭）"));
       return;
     }
     setPollError(null);
@@ -157,22 +172,24 @@ export function SettingsPanel({
           pollIntervalSeconds: interval,
           riskRadarEnabled,
           documentCliConsent,
+          uiLocale,
         },
         ready.revision,
       );
       if (!ok) {
-        toast.error(settings.saveError ?? "保存失败，请重试");
+        toast.error(settings.saveError ?? t("保存失败，请重试"));
         return;
       }
-      toast.show("AutoWonder 设置已保存", { variant: "success" });
+      toast.show(t("AutoWonder 设置已保存"), { variant: "success" });
       onSaved?.({
         mcpUrl: nextUrl,
         pollIntervalSeconds: interval,
         riskRadarEnabled,
         documentCliConsent,
+        uiLocale,
       });
       const result = await ping({ url: nextUrl });
-      setTestState(describeTest(result));
+      setTestState(describeTest(result, t));
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -192,7 +209,7 @@ export function SettingsPanel({
     setTestState(null);
     try {
       const result = await ping({ url: nextUrl });
-      setTestState(describeTest(result));
+      setTestState(describeTest(result, t));
     } catch (error) {
       setTestState({ ok: false, message: errorMessage(error) });
     } finally {
@@ -205,7 +222,7 @@ export function SettingsPanel({
       {showHeader ? (
         <SectionHeader
           title="AutoWonder 连接"
-          subtitle="只需配置一个 MCP URL，所有管理能力都通过它调用。"
+          subtitle="配置 MCP 连接、工单轮询、风险雷达和文档 CLI 授权。"
           theme={theme}
         />
       ) : null}
@@ -246,26 +263,11 @@ export function SettingsPanel({
                 disabled={testing}
                 onPress={() => void testConnection()}
               />
-              <Button
-                label={saving ? "保存中…" : "保存设置"}
-                theme={theme}
-                compact
-                tone="primary"
-                icon={saving ? undefined : "Save"}
-                disabled={saving}
-                onPress={() => void save()}
-              />
             </View>
           </View>
         </LabeledField>
 
         {testState ? <Text style={resultStyle}>{testState.message}</Text> : null}
-        {settings.saving ? <Text style={textStyle(theme, 12, true)}>正在写入配置…</Text> : null}
-        {settings.saveError ? (
-          <Text style={{ color: theme.colors.statusDanger, fontSize: 12 }}>
-            {settings.saveError}
-          </Text>
-        ) : null}
       </Card>
 
       <Divider theme={theme} />
@@ -300,17 +302,41 @@ export function SettingsPanel({
 
       <Card theme={theme}>
         <SettingsSwitch
-          label="风险雷达"
-          hint="在工单看板顶部显示停滞、待决策、执行失败和计划未启动等风险统计。默认开启。"
+          label={t("风险雷达")}
+          hint={t("在工单看板顶部显示停滞、待决策、执行失败和计划未启动等风险统计。默认开启。")}
           value={riskRadarEnabled}
           onValueChange={setRiskRadarEnabled}
         />
         <SettingsSwitch
-          label="允许自动下载 AutoWonder CLI"
-          hint="上传或下载工单文档时，首次会通过 npx 下载 autowonder CLI。关闭时插件不会自动安装任何软件。"
+          label={t("允许自动下载 AutoWonder CLI")}
+          hint={t("下载工单文档时，首次会通过 npx 下载 autowonder CLI。关闭时插件不会自动安装任何软件。")}
           value={documentCliConsent}
           onValueChange={setDocumentCliConsent}
         />
+      </Card>
+
+      <Card theme={theme}>
+        <Text style={textStyle(theme, 13)}>{t("界面语言")}</Text>
+        <Row gap={6} wrap>
+          {(
+            [
+              ["auto", t("跟随 Paseo")],
+              ["zh-CN", t("简体中文")],
+              ["en", "English"],
+            ] as const
+          ).map(([value, label]) => (
+            <Chip
+              key={value}
+              label={label}
+              active={uiLocale === value}
+              theme={theme}
+              onPress={() => setUiLocale(value)}
+            />
+          ))}
+        </Row>
+        <Text style={textStyle(theme, 11, true)}>
+          {t("保存全部设置后立即生效，无需重新加载插件。")}
+        </Text>
       </Card>
 
       <Divider theme={theme} />
@@ -332,17 +358,46 @@ export function SettingsPanel({
           移动端只展示核心字段；复杂的 JSON 参数建议在桌面端或工具控制台中编辑。
         </Text>
       ) : null}
+
+      <Divider theme={theme} />
+
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <Button
+            label={saving ? "保存中…" : "保存全部设置"}
+            theme={theme}
+            tone="primary"
+            icon={saving ? undefined : "Save"}
+            disabled={saving}
+            onPress={() => void save()}
+          />
+          <Text style={{ ...textStyle(theme, 11, true), flexShrink: 1 }}>
+            保存 MCP URL、轮询间隔、风险雷达和 CLI 授权。
+          </Text>
+        </View>
+        {settings.saving ? <Text style={textStyle(theme, 12, true)}>正在写入配置…</Text> : null}
+        {settings.saveError ? (
+          <Text style={{ color: theme.colors.statusDanger, fontSize: 12 }}>
+            {settings.saveError}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 export function AutoWonderSettingsScreen({ theme, layout }: PluginSurfaceProps) {
+  const settings = useSettings(autowonderSettings);
+  const preference =
+    settings.status === "ready" ? preferenceFromSettings(settings.values) : "auto";
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.surface0 }}
-      contentContainerStyle={{ padding: layout.compact ? 16 : 24, paddingBottom: 40 }}
-    >
-      <SettingsPanel theme={theme} compact={layout.compact} />
-    </ScrollView>
+    <I18nProvider preference={preference}>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.colors.surface0 }}
+        contentContainerStyle={{ padding: layout.compact ? 16 : 24, paddingBottom: 40 }}
+      >
+        <SettingsPanel theme={theme} compact={layout.compact} />
+      </ScrollView>
+    </I18nProvider>
   );
 }

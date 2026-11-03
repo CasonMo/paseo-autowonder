@@ -4,7 +4,9 @@ import { Modal } from "@getpaseo/plugin/client/react-native";
 import { Icon } from "@getpaseo/plugin/client/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
+import { Text } from "./Text";
+import { useI18n } from "./i18n";
 import {
   autowonderSettings,
   callToolRpc,
@@ -100,6 +102,7 @@ function hostOf(url: string): string {
 }
 
 export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
+  const { t } = useI18n();
   const settings = useSettings(autowonderSettings);
   const call = useRpc(callToolRpc);
   const listTools = useRpc(listToolsRpc);
@@ -733,7 +736,7 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
       ) : null}
 
       <Modal
-        title="AutoWonder 设置"
+        title={t("AutoWonder 设置")}
         open={settingsOpen}
         onOpenChange={(next) => {
           if (!next) setSettingsOpen(false);

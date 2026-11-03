@@ -8,7 +8,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   View,
   type TextStyle,
   type ViewStyle,
@@ -21,6 +20,8 @@ import {
   priorityLabel,
   statusTone,
 } from "./lib";
+import { Text } from "./Text";
+import { useI18n } from "./i18n";
 
 export interface UIProps {
   theme: PluginTheme;
@@ -302,11 +303,12 @@ export function Input({
   secureTextEntry?: boolean;
   numberOfLines?: number;
 }) {
+  const { t } = useI18n();
   return (
     <TextInput
       value={value}
       onChangeText={onChangeText}
-      placeholder={placeholder}
+      placeholder={placeholder ? t(placeholder) : undefined}
       placeholderTextColor={theme.colors.foregroundMuted}
       secureTextEntry={secureTextEntry}
       multiline={multiline}
@@ -459,6 +461,7 @@ export function MarkdownBlock({
       >
         <Text
           selectable
+          translate={false}
           style={{
             color: theme.colors.foreground,
             fontFamily: monoFont,
@@ -494,6 +497,7 @@ export function MarkdownBlock({
         <Text
           key={`heading-${index}`}
           selectable
+          translate={false}
           style={{
             color: theme.colors.foreground,
             fontSize: level === 1 ? 18 : level === 2 ? 15 : 13,
@@ -512,6 +516,7 @@ export function MarkdownBlock({
         <Text
           key={`bullet-${index}`}
           selectable
+          translate={false}
           style={{
             color: theme.colors.foreground,
             fontSize: 13,
@@ -537,6 +542,7 @@ export function MarkdownBlock({
       <Text
         key={`text-${index}`}
         selectable
+        translate={false}
         style={{
           color: theme.colors.foreground,
           fontSize: 13,
@@ -617,6 +623,7 @@ export function JsonBlock({
       >
         <Text
           selectable
+          translate={false}
           style={{
             color: theme.colors.foreground,
             fontFamily: monoFont,

@@ -1,8 +1,11 @@
 import { useRpc, useSettings } from "@getpaseo/plugin/client";
+import { Icon } from "@getpaseo/plugin/client/ui";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { Text } from "./Text";
+import { useI18n } from "./i18n";
 import {
   autowonderSettings,
   callToolRpc,
@@ -161,6 +164,7 @@ export function WorkitemsSection({
   onOpenDetail: (item: Record<string, unknown>) => void;
 }) {
   const call = useRpc(callToolRpc);
+  const { t } = useI18n();
   const settings = useSettings(autowonderSettings);
   const queryClient = useQueryClient();
   const [mineTab, setMineTab] = useState<MineTab>("all");
@@ -169,12 +173,15 @@ export function WorkitemsSection({
   const [contentWidth, setContentWidth] = useState(0);
   const [showCanceled, setShowCanceled] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskFilter | null>(null);
+  const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [runner, setRunner] = useState<{
     tool: ToolDescriptor;
     preset: Record<string, unknown>;
   } | null>(null);
   const { height: windowHeight } = useWindowDimensions();
   const toolMap = useMemo(() => new Map(tools.map((tool) => [tool.name, tool])), [tools]);
+  const currentTypeFilter =
+    TYPE_FILTERS.find((filter) => filter.id === typeFilter) ?? TYPE_FILTERS[0];
 
   const query = useQuery({
     queryKey: ["aw", workspaceId, "workitems-board", mineTab, typeFilter, keyword],
@@ -271,9 +278,10 @@ export function WorkitemsSection({
     <View style={{ gap: 14 }} onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)}>
       <SectionHeader
         title="工单"
-        subtitle={`已加载 ${visibleItems.length} 条 · 每个状态最多 ${WORKITEMS_PER_STATUS} 条${
-          hasCategoryAtLimit ? "，可搜索缩小范围" : ""
-        }`}
+        subtitle={`${t("已加载 {{count}} 条", { count: visibleItems.length })} · ${t(
+          "每个状态最多 {{limit}} 条",
+          { limit: WORKITEMS_PER_STATUS },
+        )}${hasCategoryAtLimit ? t("，可搜索缩小范围") : ""}`}
         theme={theme}
         trailing={
           <Row gap={6}>
@@ -318,7 +326,7 @@ export function WorkitemsSection({
             {RISK_DEFS.map((risk) => (
               <Chip
                 key={risk.id}
-                label={`${risk.label} ${riskCounts[risk.id]}`}
+                label={`${t(risk.label)} ${riskCounts[risk.id]}`}
                 active={riskFilter === risk.id}
                 disabled={riskCounts[risk.id] === 0 && riskFilter !== risk.id}
                 onPress={() =>
@@ -331,48 +339,128 @@ export function WorkitemsSection({
         </Card>
       ) : null}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <Row gap={6} wrap={false}>
-          {MINE_TABS.map((tab) => (
+      <View style={{ position: "relative", zIndex: typeMenuOpen ? 20 : 0 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("工单类型：{{label}}", {
+                label: currentTypeFilter.label,
+              })}
+              accessibilityState={{ expanded: typeMenuOpen }}
+              onPress={() => setTypeMenuOpen((value) => !value)}
+              style={({ pressed }) => ({
+                minHeight: 32,
+                paddingHorizontal: 12,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: typeMenuOpen ? theme.colors.accent : theme.colors.border,
+                backgroundColor: typeMenuOpen ? theme.colors.surface2 : theme.colors.surface1,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                opacity: pressed ? 0.75 : 1,
+              })}
+            >
+              <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                {currentTypeFilter.label}
+              </Text>
+              <Icon
+                name={typeMenuOpen ? "ChevronUp" : "ChevronDown"}
+                size={13}
+                color={theme.colors.foregroundMuted}
+              />
+            </Pressable>
+            {MINE_TABS.map((tab) => (
+              <Chip
+                key={tab.id}
+                label={tab.label}
+                active={mineTab === tab.id}
+                theme={theme}
+                onPress={() => {
+                  setTypeMenuOpen(false);
+                  setMineTab(tab.id);
+                }}
+              />
+            ))}
+            <View style={{ width: compact ? 190 : 230 }}>
+              <Input
+                value={keyword}
+                onChangeText={setKeyword}
+                placeholder="搜索工单 ID 或标题…"
+                theme={theme}
+              />
+            </View>
             <Chip
-              key={tab.id}
-              label={tab.label}
-              active={mineTab === tab.id}
+              label="显示已取消"
+              active={showCanceled}
               theme={theme}
-              onPress={() => setMineTab(tab.id)}
+              onPress={() => setShowCanceled((value) => !value)}
             />
-          ))}
-        </Row>
-      </ScrollView>
+          </View>
+        </ScrollView>
 
-      <Input
-        value={keyword}
-        onChangeText={setKeyword}
-        placeholder="搜索工单 ID 或标题…"
-        theme={theme}
-      />
-
-      <Row gap={6}>
-        {TYPE_FILTERS.map((filter) => (
-          <Chip
-            key={filter.id}
-            label={filter.label}
-            active={typeFilter === filter.id}
-            theme={theme}
-            onPress={() => setTypeFilter(filter.id)}
-          />
-        ))}
-        <Chip
-          label="显示已取消"
-          active={showCanceled}
-          theme={theme}
-          onPress={() => setShowCanceled((value) => !value)}
-        />
-      </Row>
-      <Text style={textStyle(theme, 10, true)}>
-        每个状态最多展示 {WORKITEMS_PER_STATUS} 条工单（按工单 ID 倒序）；更早的工单不会出现在看板或变化提示中。
-      </Text>
-
+        {typeMenuOpen ? (
+          <View
+            style={{
+              position: "absolute",
+              top: 38,
+              left: 0,
+              zIndex: 50,
+              width: 156,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              borderRadius: 9,
+              backgroundColor: theme.colors.surface1,
+              padding: 5,
+              gap: 2,
+              shadowColor: "#000000",
+              shadowOpacity: 0.16,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 5 },
+              elevation: 8,
+            }}
+          >
+            {TYPE_FILTERS.map((filter) => {
+              const selected = typeFilter === filter.id;
+              return (
+                <Pressable
+                  key={filter.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => {
+                    setTypeFilter(filter.id);
+                    setTypeMenuOpen(false);
+                  }}
+                  style={({ pressed }) => ({
+                    minHeight: 32,
+                    paddingHorizontal: 9,
+                    borderRadius: 6,
+                    backgroundColor:
+                      selected || pressed ? theme.colors.surface2 : "transparent",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                  })}
+                >
+                  <Text
+                    style={{
+                      color: selected ? theme.colors.accent : theme.colors.foreground,
+                      fontSize: 12,
+                      flex: 1,
+                    }}
+                  >
+                    {filter.label}
+                  </Text>
+                  {selected ? (
+                    <Icon name="Check" size={13} color={theme.colors.accent} />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
       {query.isLoading ? <Loading theme={theme} label="读取工单看板…" /> : null}
       {query.error ? (
         <ErrorBox error={query.error} theme={theme} onRetry={() => void query.refetch()} />
@@ -486,6 +574,7 @@ export function WorkitemsSection({
                         </Row>
                         <Text
                           numberOfLines={3}
+                          translate={false}
                           style={{ color: theme.colors.foreground, fontSize: 13, lineHeight: 19 }}
                         >
                           {asString(item.title)}
@@ -505,7 +594,11 @@ export function WorkitemsSection({
                               {assigneeInitial}
                             </Text>
                           </View>
-                          <Text numberOfLines={1} style={{ ...textStyle(theme, 11, true), flex: 1 }}>
+                          <Text
+                            numberOfLines={1}
+                            translate={false}
+                            style={{ ...textStyle(theme, 11, true), flex: 1 }}
+                          >
                             {assignee}
                           </Text>
                           <Text style={textStyle(theme, 11, true)}>
@@ -569,7 +662,11 @@ export function WorkitemsSection({
                       gap: 4,
                     }}
                   >
-                    <Text numberOfLines={2} style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                    <Text
+                      numberOfLines={2}
+                      translate={false}
+                      style={{ color: theme.colors.foreground, fontSize: 12 }}
+                    >
                       {asString(item.title)}
                     </Text>
                   </Pressable>
@@ -580,6 +677,10 @@ export function WorkitemsSection({
           </View>
         </ScrollView>
       ) : null}
+
+      <Text style={textStyle(theme, 10, true)}>
+        每个状态最多展示 {WORKITEMS_PER_STATUS} 条工单（按工单 ID 倒序）；更早的工单不会出现在看板或变化提示中。
+      </Text>
 
       {runner ? (
         <ToolRunner

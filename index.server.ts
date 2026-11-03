@@ -9,15 +9,11 @@ import {
   listToolsRpc,
   pingRpc,
   refreshChangesRpc,
-  uploadWorkitemDocumentRpc,
   type AutoWonderSettingsValues,
 } from "./shared/contracts";
 import { callTool, listTools } from "./server/mcp";
 import { ChangeTracker } from "./server/changes";
-import {
-  downloadWorkitemDocument,
-  uploadWorkitemDocuments,
-} from "./server/documents";
+import { downloadWorkitemDocument } from "./server/documents";
 
 export default function contribute(server: PluginServerContext) {
   const settings = server.registerSettings(autowonderSettings);
@@ -80,16 +76,6 @@ export default function contribute(server: PluginServerContext) {
   server.handle(ackChangesRpc, () => changes.ack());
   server.handle(ackChangeRpc, ({ key }) => changes.ackOne(key));
   server.handle(refreshChangesRpc, () => changes.refresh());
-  server.handle(uploadWorkitemDocumentRpc, async ({ workspaceId, workitemId, filePaths }) => {
-    const values = await readSettings();
-    return uploadWorkitemDocuments(
-      await resolveUrl(),
-      workspaceId,
-      workitemId,
-      filePaths,
-      values.documentCliConsent,
-    );
-  });
   server.handle(
     downloadWorkitemDocumentRpc,
     async ({ workspaceId, workitemId, fileName }) => {

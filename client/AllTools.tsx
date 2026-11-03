@@ -1,6 +1,7 @@
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "./Text";
 import type { ToolDescriptor } from "../shared/contracts";
 import {
   Badge,
@@ -15,6 +16,7 @@ import {
 } from "./components";
 import { ToolRunner } from "./ToolRunner";
 import { truncate } from "./lib";
+import { useI18n } from "./i18n";
 
 interface ToolGroup {
   id: string;
@@ -59,6 +61,7 @@ export function AllTools({
   theme: PluginTheme;
   compact: boolean;
 }) {
+  const { t } = useI18n();
   const [keyword, setKeyword] = useState("");
   const [group, setGroup] = useState<string>("all");
   const [limit, setLimit] = useState(40);
@@ -113,13 +116,16 @@ export function AllTools({
     <View style={{ gap: 14 }}>
       <SectionHeader
         title="全部工具"
-        subtitle={`MCP 动态发现 ${tools.length} 个工具，新增工具无需更新插件。`}
+        subtitle={t("MCP 动态发现 {{count}} 个工具，新增工具无需更新插件。", {
+          count: tools.length,
+        })}
         theme={theme}
       />
       <Card theme={theme}>
         <Text style={{ color: theme.colors.foregroundMuted, fontSize: 12, lineHeight: 18 }}>
-          当前 MCP 未暴露回收站、平台集成、成员管理、项目配置备份、环境变量、数据洞察和审计日志等页面接口；
-          这些操作仍需到 AutoWonder 网页完成。MCP 一旦新增工具，会自动出现在下方列表。
+          {t(
+            "当前 MCP 未暴露回收站、平台集成、成员管理、项目配置备份、环境变量、数据洞察和审计日志等页面接口；这些操作仍需到 AutoWonder 网页完成。MCP 一旦新增工具，会自动出现在下方列表。",
+          )}
         </Text>
       </Card>
       <Input
@@ -133,7 +139,7 @@ export function AllTools({
       />
       <Row gap={6}>
         <Chip
-          label={`全部 ${tools.length}`}
+          label={t("全部 {{count}}", { count: tools.length })}
           active={group === "all"}
           theme={theme}
           onPress={() => {
@@ -187,6 +193,7 @@ export function AllTools({
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <Text
                     selectable
+                    translate={false}
                     style={{
                       color: theme.colors.foreground,
                       fontSize: 13,
@@ -201,6 +208,7 @@ export function AllTools({
                 </View>
                 <Text
                   numberOfLines={compact ? 2 : 1}
+                  translate={false}
                   style={{ color: theme.colors.foregroundMuted, fontSize: 12, lineHeight: 18 }}
                 >
                   {truncate(description, compact ? 120 : 220)}
@@ -213,7 +221,10 @@ export function AllTools({
 
       {visible.length > limit ? (
         <Button
-          label={`显示更多（已显示 ${shown.length}/${visible.length}）`}
+          label={t("显示更多（已显示 {{shown}}/{{visible}}）", {
+            shown: shown.length,
+            visible: visible.length,
+          })}
           theme={theme}
           icon="ChevronDown"
           onPress={() => setLimit((value) => value + 40)}

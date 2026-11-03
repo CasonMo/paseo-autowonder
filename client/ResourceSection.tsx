@@ -4,7 +4,9 @@ import { Icon, ScrollView } from "@getpaseo/plugin/client/ui";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Pressable, useWindowDimensions, View } from "react-native";
+import { Text } from "./Text";
+import { useI18n } from "./i18n";
 import { callToolRpc, type ToolDescriptor } from "../shared/contracts";
 import { ToolRunner } from "./ToolRunner";
 import {
@@ -106,6 +108,7 @@ export interface ResourceDef {
   contentField?: string;
   extraSections?: ExtraSectionDef[];
   actions?: ActionDef[];
+  ActionsExtra?: ComponentType<DetailExtraProps>;
   createPreset?: Record<string, unknown>;
   DetailExtra?: ComponentType<DetailExtraProps>;
 }
@@ -130,7 +133,7 @@ function renderColumnValue(
     return <Text style={{ ...textStyle(theme, 12, true), fontFamily: "monospace" }}>#{asString(raw)}</Text>;
   }
   return (
-    <Text numberOfLines={1} style={textStyle(theme, 12)}>
+    <Text numberOfLines={1} translate={false} style={textStyle(theme, 12)}>
       {formatValue(raw)}
     </Text>
   );
@@ -157,6 +160,7 @@ export function ResourceSection({
     decorateItem?: (item: Record<string, unknown>) => Record<string, unknown>,
   ) => void;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -191,7 +195,10 @@ export function ResourceSection({
       }
       const response = await call({ name: resource.listTool, arguments: args });
       if (response.isError) {
-        throw new Error(response.contentText ?? `${resource.label}加载失败`);
+        throw new Error(
+          response.contentText ??
+            t("{{resource}}加载失败", { resource: t(resource.label) }),
+        );
       }
       return response.data;
     },
@@ -223,7 +230,10 @@ export function ResourceSection({
     <View style={{ gap: 14 }}>
       <SectionHeader
         title={resource.label}
-        subtitle={`${items.length} 条${items.length >= pageSize ? "（可能还有更多）" : ""}`}
+        subtitle={t("{{count}} 条{{more}}", {
+          count: items.length,
+          more: items.length >= pageSize ? t("（可能还有更多）") : "",
+        })}
         theme={theme}
         trailing={
           <Row gap={6}>
@@ -337,12 +347,13 @@ export function ResourceSection({
                 <View style={{ flex: 1, gap: 3 }}>
                   <Text
                     numberOfLines={compact ? 2 : 1}
+                    translate={false}
                     style={{ color: theme.colors.foreground, fontSize: 14, fontWeight: "500" }}
                   >
                     {title}
                   </Text>
                   {subtitle ? (
-                    <Text numberOfLines={1} style={textStyle(theme, 11, true)}>
+                    <Text numberOfLines={1} translate={false} style={textStyle(theme, 11, true)}>
                       {subtitle}
                     </Text>
                   ) : null}
@@ -384,7 +395,9 @@ export function ResourceSection({
           disabled={page <= 1 || !listReady}
           onPress={() => setPage((value) => Math.max(1, value - 1))}
         />
-        <Text style={textStyle(theme, 12, true)}>第 {page} 页</Text>
+        <Text style={textStyle(theme, 12, true)}>
+          {t("第 {{page}} 页", { page })}
+        </Text>
         <Button
           label="下一页"
           theme={theme}
@@ -468,6 +481,7 @@ export function EntityDetailModal({
   onClose: () => void;
   onAction: (toolName: string, data: Record<string, unknown>) => void;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -532,44 +546,66 @@ export function EntityDetailModal({
               ) : null}
             </Row>
             {!inline ? (
-              <Text selectable style={{ color: theme.colors.foreground, fontSize: 15, lineHeight: 22 }}>
+              <Text
+                selectable
+                translate={false}
+                style={{ color: theme.colors.foreground, fontSize: 15, lineHeight: 22 }}
+              >
                 {title}
               </Text>
             ) : null}
           </View>
 
-          {actions.length > 0 ? (
+          {actions.length > 0 || resource.ActionsExtra ? (
             <View style={{ gap: 8 }}>
               <Text style={textStyle(theme, 12, true)}>操作</Text>
-              <Row gap={7}>
-                {visibleActions.map((action) => (
-                  <Button
-                    key={action.label}
-                    label={action.label}
-                    theme={theme}
-                    compact
-                    tone={action.tone ?? "default"}
-                    disabled={!toolMap.has(action.tool)}
-                    onPress={() => {
-                      if (!toolMap.has(action.tool)) {
-                        toast.error(`工具 ${action.tool} 不可用`);
-                        return;
-                      }
-                      const preset = action.preset ? action.preset(data) : { workspaceId, id: data.id };
-                      onAction(action.tool, preset);
-                    }}
-                  />
-                ))}
-                {actions.length > 3 ? (
-                  <Button
-                    label={actionsExpanded ? "收起" : "更多操作"}
-                    theme={theme}
-                    compact
-                    icon={actionsExpanded ? "ChevronUp" : "ChevronDown"}
-                    onPress={() => setActionsExpanded((value) => !value)}
-                  />
-                ) : null}
-              </Row>
+              {actions.length > 0 || resource.ActionsExtra ? (
+                <Row gap={7}>
+                  {visibleActions.map((action) => (
+                    <Button
+                      key={action.label}
+                      label={action.label}
+                      theme={theme}
+                      compact
+                      tone={action.tone ?? "default"}
+                      disabled={!toolMap.has(action.tool)}
+                      onPress={() => {
+                        if (!toolMap.has(action.tool)) {
+                          toast.error(
+                            t("工具 {{tool}} 不可用", { tool: action.tool }),
+                          );
+                          return;
+                        }
+                        const preset = action.preset
+                          ? action.preset(data)
+                          : { workspaceId, id: data.id };
+                        onAction(action.tool, preset);
+                      }}
+                    />
+                  ))}
+                  {resource.ActionsExtra ? (
+                    <resource.ActionsExtra
+                      data={data}
+                      workspaceId={workspaceId}
+                      theme={theme}
+                      compact={compact}
+                      onChanged={() => {
+                        void detailQuery.refetch();
+                        void queryClient.invalidateQueries({ queryKey: ["aw"] });
+                      }}
+                    />
+                  ) : null}
+                  {actions.length > 3 ? (
+                    <Button
+                      label={actionsExpanded ? "收起" : "更多操作"}
+                      theme={theme}
+                      compact
+                      icon={actionsExpanded ? "ChevronUp" : "ChevronDown"}
+                      onPress={() => setActionsExpanded((value) => !value)}
+                    />
+                  ) : null}
+                </Row>
+              ) : null}
             </View>
           ) : null}
 
@@ -586,6 +622,15 @@ export function EntityDetailModal({
             </Card>
           ) : null}
 
+          {content ? (
+            <View style={{ gap: 6 }}>
+              <Text style={textStyle(theme, 12, true)}>正文</Text>
+              <Card theme={theme}>
+                <MarkdownBlock text={content} theme={theme} maxHeight={compact ? 260 : 380} />
+              </Card>
+            </View>
+          ) : null}
+
           {resource.DetailExtra ? (
             <resource.DetailExtra
               data={data}
@@ -597,15 +642,6 @@ export function EntityDetailModal({
                 void queryClient.invalidateQueries({ queryKey: ["aw"] });
               }}
             />
-          ) : null}
-
-          {content ? (
-            <View style={{ gap: 6 }}>
-              <Text style={textStyle(theme, 12, true)}>正文</Text>
-              <Card theme={theme}>
-                <MarkdownBlock text={content} theme={theme} maxHeight={compact ? 260 : 380} />
-              </Card>
-            </View>
           ) : null}
 
           {resource.extraSections?.map((section) => (
@@ -774,7 +810,10 @@ function ExtraSection({
           return (
             <Card key={`${asString(entry.id) || index}`} theme={theme}>
               {itemTitle ? (
-                <Text style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "500" }}>
+                <Text
+                  translate={false}
+                  style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "500" }}
+                >
                   {itemTitle}
                 </Text>
               ) : null}

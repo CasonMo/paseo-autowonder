@@ -1,16 +1,21 @@
 import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
-import { useRpc } from "@getpaseo/plugin/client";
+import { useRpc, useSettings } from "@getpaseo/plugin/client";
 import { SidebarRow } from "@getpaseo/plugin/client/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { ackChangesRpc } from "./shared/contracts";
+import { ackChangesRpc, autowonderSettings } from "./shared/contracts";
 import { BoardScreen } from "./client/BoardScreen";
 import { ChangeIndicator, ChangePopover } from "./client/ChangePopover";
 import { changesQueryKey, useChanges } from "./client/changes";
 import { BOARD_SCREEN, SETTINGS_SCREEN } from "./client/constants";
 import { AUTO_WONDER_ICON_SVG, AutoWonderMark } from "./client/icons";
 import { AutoWonderSettingsScreen } from "./client/SettingsScreen";
+import {
+  I18nProvider,
+  preferenceFromSettings,
+  setHostLocale,
+} from "./client/i18n";
 
-function AutoWonderItem({
+function AutoWonderItemContent({
   currentScreen,
   theme,
   openScreen,
@@ -49,15 +54,49 @@ function AutoWonderItem({
   );
 }
 
+function AutoWonderItem(props: PluginSidebarItemProps) {
+  const settings = useSettings(autowonderSettings);
+  const preference =
+    settings.status === "ready" ? preferenceFromSettings(settings.values) : "auto";
+  return (
+    <I18nProvider preference={preference}>
+      <AutoWonderItemContent {...props} />
+    </I18nProvider>
+  );
+}
+
+function LocalizedBoardScreen(props: Parameters<typeof BoardScreen>[0]) {
+  const settings = useSettings(autowonderSettings);
+  const preference =
+    settings.status === "ready" ? preferenceFromSettings(settings.values) : "auto";
+  return (
+    <I18nProvider preference={preference}>
+      <BoardScreen {...props} />
+    </I18nProvider>
+  );
+}
+
 export default function contribute(client: PluginClientContext) {
+  let appLocale = "zh-CN";
+  try {
+    appLocale = client.i18n.locale;
+    setHostLocale(appLocale);
+  } catch {
+    // The host may not expose a runtime locale; keep the Chinese default.
+  }
+  const localized = appLocale.toLowerCase().startsWith("zh");
+  const screenTitle = localized ? "AutoWonder 工作台" : "AutoWonder Workbench";
+  const settingsTitle = localized
+    ? "AutoWonder 工作台设置"
+    : "AutoWonder Workbench settings";
   client.addScreen({
     id: BOARD_SCREEN,
-    title: "AutoWonder 工作台",
-    Component: BoardScreen,
+    title: screenTitle,
+    Component: LocalizedBoardScreen,
   });
   client.addSettingsScreen({
     id: SETTINGS_SCREEN,
-    title: "AutoWonder 工作台",
+    title: screenTitle,
     icon: "Settings",
     Component: AutoWonderSettingsScreen,
   });
@@ -68,7 +107,7 @@ export default function contribute(client: PluginClientContext) {
   });
   client.addCommandCenterItem({
     id: "autowonder-open-board",
-    title: "打开 AutoWonder 工作台",
+    title: localized ? "打开 AutoWonder 工作台" : "Open AutoWonder Workbench",
     icon: { svg: AUTO_WONDER_ICON_SVG },
     keywords: ["autowonder", "aw", "工单", "数字员工", "sdlc", "定时任务", "记忆"],
     context: "global",
@@ -78,7 +117,7 @@ export default function contribute(client: PluginClientContext) {
   });
   client.addCommandCenterItem({
     id: "autowonder-open-settings",
-    title: "AutoWonder 工作台设置",
+    title: settingsTitle,
     icon: "Settings",
     keywords: ["autowonder", "mcp", "设置", "url", "token"],
     context: "global",
@@ -88,7 +127,7 @@ export default function contribute(client: PluginClientContext) {
   });
   client.addSlashCommand({
     name: "aw",
-    description: "打开 AutoWonder 工作台",
+    description: localized ? "打开 AutoWonder 工作台" : "Open AutoWonder Workbench",
     argumentHint: "",
     context: "workspace",
     onSubmit({ openScreen }) {

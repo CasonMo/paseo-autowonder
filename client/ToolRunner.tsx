@@ -4,7 +4,8 @@ import { Icon } from "@getpaseo/plugin/client/ui";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "./Text";
 import { callToolRpc, type ToolDescriptor } from "../shared/contracts";
 import {
   Badge,
@@ -18,6 +19,7 @@ import {
   textStyle,
 } from "./components";
 import { displayStatus, errorMessage, FIELD_LABELS, jsonPretty } from "./lib";
+import { useI18n } from "./i18n";
 
 interface JsonSchemaProperty {
   type?: string | string[];
@@ -86,6 +88,7 @@ export function ToolRunner({
   theme: PluginTheme;
   onSuccess?: () => void;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -164,7 +167,9 @@ export function ToolRunner({
       if (text === "") continue;
       if (type === "integer" || type === "number") {
         const value = Number(text);
-        if (!Number.isFinite(value)) throw new Error(`${key} 需要填写数字`);
+        if (!Number.isFinite(value)) {
+          throw new Error(t("{{key}} 需要填写数字", { key }));
+        }
         args[key] = type === "integer" ? Math.trunc(value) : value;
         continue;
       }
@@ -172,7 +177,7 @@ export function ToolRunner({
         try {
           args[key] = JSON.parse(text);
         } catch {
-          throw new Error(`${key} 需要填写合法 JSON`);
+          throw new Error(t("{{key}} 需要填写合法 JSON", { key }));
         }
         continue;
       }
@@ -180,7 +185,9 @@ export function ToolRunner({
     }
 
     for (const key of required) {
-      if (args[key] === undefined) throw new Error(`缺少必填字段：${key}`);
+      if (args[key] === undefined) {
+        throw new Error(t("缺少必填字段：{{key}}", { key }));
+      }
     }
     return args;
   }
@@ -196,7 +203,7 @@ export function ToolRunner({
       return;
     }
     if (destructive && !confirmed) {
-      setError("这是删除/取消类操作，请先勾选确认。");
+      setError(t("这是删除/取消类操作，请先勾选确认。"));
       return;
     }
     setRunning(true);
@@ -209,9 +216,14 @@ export function ToolRunner({
         message: response.isError ? response.contentText ?? "工具返回错误" : undefined,
       });
       if (response.isError) {
-        toast.error(response.contentText ?? `${humanToolName(tool.name)} 执行失败`);
+        toast.error(
+          response.contentText ?? t("{{tool}} 执行失败", { tool: humanToolName(tool.name) }),
+        );
       } else {
-        toast.show(`${humanToolName(tool.name)} 执行成功`, { variant: "success" });
+        toast.show(
+          t("{{tool}} 执行成功", { tool: humanToolName(tool.name) }),
+          { variant: "success" },
+        );
         void queryClient.invalidateQueries({ queryKey: ["aw"] });
         onSuccess?.();
       }
@@ -263,7 +275,11 @@ export function ToolRunner({
           <Divider theme={theme} />
 
           {rawMode ? (
-            <LabeledField label="arguments" hint="完整 JSON 对象，适合复杂嵌套参数。" theme={theme}>
+            <LabeledField
+              label="arguments"
+              hint={t("完整 JSON 对象，适合复杂嵌套参数。")}
+              theme={theme}
+            >
               <JSONTextInput value={rawText} onChangeText={setRawText} theme={theme} />
             </LabeledField>
           ) : (
@@ -423,6 +439,7 @@ function SchemaField({
   onChangeText: (value: string) => void;
   onChangeBoolean: (value: boolean | undefined) => void;
 }) {
+  const { t } = useI18n();
   const type = normalizedType(property);
   const description = property.description;
   const multiline =
@@ -495,9 +512,9 @@ function SchemaField({
       label={FIELD_LABELS[name] ?? name}
       hint={
         description
-          ? `${description}${!required ? "（可选，留空表示不传）" : ""}`
+          ? `${description}${!required ? t("（可选，留空表示不传）") : ""}`
           : !required
-            ? "可选，留空表示不传"
+            ? t("可选，留空表示不传")
             : undefined
       }
       theme={theme}
@@ -511,7 +528,7 @@ function SchemaField({
         autoCorrect={false}
         placeholder={
           type === "integer" || type === "number"
-            ? "数字"
+            ? t("数字")
             : type === "array"
               ? "[1, 2]"
               : type === "object"

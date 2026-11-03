@@ -9,9 +9,6 @@ interface CliToken {
   envName: string;
   runtimeVersion: string;
   serverUrl: string;
-  maxFiles: number;
-  maxFileSizeBytes: number;
-  maxTotalSizeBytes: number;
 }
 
 export interface DownloadedDocument {
@@ -19,13 +16,6 @@ export interface DownloadedDocument {
   name: string;
   path: string;
   size?: number;
-}
-
-export interface UploadResult {
-  ok: boolean;
-  output?: string;
-  error?: string;
-  needsConsent?: boolean;
 }
 
 export interface DownloadResult {
@@ -81,7 +71,7 @@ async function mintCliToken(
   const token = asString(data.token);
   const serverUrl = asString(data.serverUrl);
   if (!token || !serverUrl) {
-    throw new Error("AutoWonder 没有返回可用的文档上传/下载 token。");
+    throw new Error("AutoWonder 没有返回可用的文档下载 token。");
   }
   let parsedUrl: URL;
   try {
@@ -105,38 +95,7 @@ async function mintCliToken(
     envName,
     runtimeVersion,
     serverUrl,
-    maxFiles: Math.max(1, Math.min(50, Math.trunc(asNumber(data.maxFiles) ?? 10))),
-    maxFileSizeBytes: Math.max(
-      1,
-      Math.min(100 * 1024 * 1024, asNumber(data.maxFileSizeBytes) ?? 5 * 1024 * 1024),
-    ),
-    maxTotalSizeBytes: Math.max(
-      1,
-      Math.min(500 * 1024 * 1024, asNumber(data.maxTotalSizeBytes) ?? 20 * 1024 * 1024),
-    ),
   };
-}
-
-function validateFiles(filePaths: string[], limits: CliToken): string[] {
-  const files = filePaths.map((filePath) => filePath.trim()).filter(Boolean);
-  if (files.length === 0) throw new Error("请填写至少一个文件路径。");
-  if (files.length > limits.maxFiles) {
-    throw new Error(`一次最多上传 ${limits.maxFiles} 个文件。`);
-  }
-  let totalSize = 0;
-  for (const file of files) {
-    if (!path.isAbsolute(file)) throw new Error(`请填写绝对路径：${file}`);
-    const stat = fs.statSync(file);
-    if (!stat.isFile()) throw new Error(`不是文件：${file}`);
-    if (stat.size > limits.maxFileSizeBytes) {
-      throw new Error(`单个文件不能超过 ${Math.round(limits.maxFileSizeBytes / 1024 / 1024)}MB：${file}`);
-    }
-    totalSize += stat.size;
-  }
-  if (totalSize > limits.maxTotalSizeBytes) {
-    throw new Error(`文件总大小不能超过 ${Math.round(limits.maxTotalSizeBytes / 1024 / 1024)}MB。`);
-  }
-  return files;
 }
 
 function errorText(error: unknown, secrets: string[]): string {
@@ -176,55 +135,6 @@ function walkFiles(directory: string): DownloadedDocument[] {
   };
   visit(directory);
   return result;
-}
-
-export async function uploadWorkitemDocuments(
-  url: string,
-  workspaceId: number,
-  workitemId: number,
-  filePaths: string[],
-  consented: boolean,
-): Promise<UploadResult> {
-  if (!consented) {
-    return {
-      ok: false,
-      needsConsent: true,
-      error: "上传文档需要先允许插件通过 npx 下载并运行 AutoWonder CLI。",
-    };
-  }
-  let token: CliToken | null = null;
-  try {
-    token = await mintCliToken(
-      url,
-      "autowonder.workitem_cli_upload_token",
-      workspaceId,
-      workitemId,
-    );
-    const files = validateFiles(filePaths, token);
-    const args = [
-      "-y",
-      `autowonder@${token.runtimeVersion}`,
-      "workitem",
-      "upload",
-      "--server-url",
-      token.serverUrl,
-      "--workitem-id",
-      String(workitemId),
-    ];
-    for (const file of files) args.push("--file", file);
-    args.push("--json");
-    const result = await execCommand("npx", args, {
-      env: { ...process.env, [token.envName]: token.token },
-      timeout: 180_000,
-      maxBuffer: 20 * 1024 * 1024,
-    });
-    return {
-      ok: true,
-      output: sanitize(result.stdout || result.stderr, [token.token]),
-    };
-  } catch (error) {
-    return { ok: false, error: errorText(error, token ? [token.token] : []) };
-  }
 }
 
 export async function downloadWorkitemDocument(

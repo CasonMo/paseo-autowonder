@@ -2,7 +2,8 @@ import { useRpc } from "@getpaseo/plugin/client";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "./Text";
 import { callToolRpc, type ToolDescriptor } from "../shared/contracts";
 import {
   Badge,
@@ -19,6 +20,10 @@ import {
 } from "./components";
 import { ToolRunner } from "./ToolRunner";
 import {
+  DispatchInspectorModal,
+  type DispatchInspectorTab,
+} from "./DispatchInspector";
+import {
   asNumber,
   asRecord,
   asString,
@@ -26,6 +31,7 @@ import {
   listItems,
 } from "./lib";
 import { useWorkspaceNameMaps } from "./workspace-names";
+import { useI18n } from "./i18n";
 
 const RANGES = [
   { hours: 24, label: "近 24 小时" },
@@ -61,12 +67,15 @@ function isActive(status: string): boolean {
   return ACTIVE_STATUSES.has(status.toUpperCase());
 }
 
-function formatAge(milliseconds: number): string {
+function formatAge(
+  milliseconds: number,
+  t: (text: string, values?: Record<string, string | number | boolean>) => string,
+): string {
   const minutes = Math.max(1, Math.floor(milliseconds / 60_000));
-  if (minutes < 60) return `${minutes} 分钟`;
+  if (minutes < 60) return t("{{minutes}} 分钟", { minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} 小时`;
-  return `${Math.floor(hours / 24)} 天`;
+  if (hours < 24) return t("{{hours}} 小时", { hours });
+  return t("{{days}} 天", { days: Math.floor(hours / 24) });
 }
 
 function Metric({
@@ -123,6 +132,7 @@ export function ExecutionsSection({
   onOpenWorkitem?: (workitemId: number) => void;
 }) {
   const call = useRpc(callToolRpc);
+  const { t } = useI18n();
   const [rangeHours, setRangeHours] = useState(24 * 7);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -130,6 +140,12 @@ export function ExecutionsSection({
   const [runner, setRunner] = useState<{
     tool: ToolDescriptor;
     preset: Record<string, unknown>;
+  } | null>(null);
+  const [inspector, setInspector] = useState<{
+    mode: DispatchInspectorTab;
+    dispatchId: number;
+    workitemId?: number;
+    status?: string;
   } | null>(null);
   const { agentNames } = useWorkspaceNameMaps(workspaceId);
   const toolMap = useMemo(() => new Map(tools.map((tool) => [tool.name, tool])), [tools]);
@@ -234,8 +250,13 @@ export function ExecutionsSection({
     <View style={{ gap: 14 }}>
       <SectionHeader
         title="执行监控"
-        subtitle={`${window.createdFrom.slice(0, 10)} 至 ${window.createdTo.slice(0, 10)} · 已加载 ${items.length} 条${
-          query.data?.truncated ? "（最多 500 条，缩小时间范围可查看更多）" : ""
+        subtitle={`${t("{{start}} 至 {{end}}", {
+          start: window.createdFrom.slice(0, 10),
+          end: window.createdTo.slice(0, 10),
+        })} · ${t("已加载 {{count}} 条", { count: items.length })}${
+          query.data?.truncated
+            ? t("（最多 500 条，缩小时间范围可查看更多）")
+            : ""
         }`}
         theme={theme}
         trailing={
@@ -327,7 +348,7 @@ export function ExecutionsSection({
           const longRunning = active && age !== undefined && age > LONG_RUNNING_MS;
           const agentLabel =
             agentId !== undefined
-              ? `${agentNames.get(agentId) ?? "数字员工"} #${agentId}`
+              ? `${agentNames.get(agentId) ?? t("数字员工")} #${agentId}`
               : "—";
           return (
             <Card
@@ -338,17 +359,22 @@ export function ExecutionsSection({
                 <Badge label={status || "—"} theme={theme} />
                 {longRunning ? <Badge label="长尾" theme={theme} tone="warning" /> : null}
                 <Text style={{ color: theme.colors.foreground, fontSize: 13, flex: 1 }}>
-                  工单 #{String(workitemId ?? "—")} · 派发 #{String(dispatchId ?? "—")}
+                  {t("工单 #{{workitem}} · 派发 #{{dispatch}}", {
+                    workitem: String(workitemId ?? "—"),
+                    dispatch: String(dispatchId ?? "—"),
+                  })}
                 </Text>
                 <Text style={textStyle(theme, 11, true)}>
                   {formatDateTime(item.createdAt)}
                 </Text>
               </Row>
               <Row gap={8} wrap>
-                <Text style={textStyle(theme, 11, true)}>数字员工：{agentLabel}</Text>
+                <Text style={textStyle(theme, 11, true)}>
+                  {t("数字员工：{{name}}", { name: agentLabel })}
+                </Text>
                 {active && age !== undefined ? (
                   <Text style={{ color: theme.colors.statusWarning, fontSize: 11 }}>
-                    已运行 {formatAge(age)}
+                    {t("已运行 {{age}}", { age: formatAge(age, t) })}
                   </Text>
                 ) : null}
               </Row>
@@ -368,30 +394,60 @@ export function ExecutionsSection({
                   theme={theme}
                   compact
                   icon="Activity"
-                  disabled={!toolMap.has("autowonder.get_dispatch_activities")}
-                  onPress={() =>
-                    openTool("autowonder.get_dispatch_activities", { dispatchId })
+                  disabled={
+                    !toolMap.has("autowonder.get_dispatch_activities") ||
+                    dispatchId === undefined
                   }
+                  onPress={() => {
+                    if (dispatchId !== undefined) {
+                      setInspector({
+                        mode: "activities",
+                        dispatchId,
+                        workitemId,
+                        status,
+                      });
+                    }
+                  }}
                 />
                 <Button
                   label="轨迹"
                   theme={theme}
                   compact
                   icon="Route"
-                  disabled={!toolMap.has("autowonder.get_dispatch_runtime_trace")}
-                  onPress={() =>
-                    openTool("autowonder.get_dispatch_runtime_trace", { dispatchId })
+                  disabled={
+                    !toolMap.has("autowonder.get_dispatch_runtime_trace") ||
+                    dispatchId === undefined
                   }
+                  onPress={() => {
+                    if (dispatchId !== undefined) {
+                      setInspector({
+                        mode: "trace",
+                        dispatchId,
+                        workitemId,
+                        status,
+                      });
+                    }
+                  }}
                 />
                 <Button
                   label="诊断"
                   theme={theme}
                   compact
                   icon="Stethoscope"
-                  disabled={!toolMap.has("autowonder.get_dispatch_diagnostics")}
-                  onPress={() =>
-                    openTool("autowonder.get_dispatch_diagnostics", { dispatchId })
+                  disabled={
+                    !toolMap.has("autowonder.get_dispatch_diagnostics") ||
+                    dispatchId === undefined
                   }
+                  onPress={() => {
+                    if (dispatchId !== undefined) {
+                      setInspector({
+                        mode: "diagnostics",
+                        dispatchId,
+                        workitemId,
+                        status,
+                      });
+                    }
+                  }}
                 />
                 <Button
                   label="暂停"
@@ -424,7 +480,7 @@ export function ExecutionsSection({
               </Row>
               {compact ? null : (
                 <Text style={textStyle(theme, 11, true)}>
-                  活动与诊断返回原始 JSON；轨迹可能包含较长的运行时事件。
+                  活动、轨迹与诊断以时间线和结构化视图展示，原始 JSON 可展开查看。
                 </Text>
               )}
             </Card>
@@ -440,6 +496,19 @@ export function ExecutionsSection({
           theme={theme}
           onClose={() => setRunner(null)}
           onSuccess={() => void query.refetch()}
+        />
+      ) : null}
+
+      {inspector ? (
+        <DispatchInspectorModal
+          open
+          initialTab={inspector.mode}
+          workspaceId={workspaceId}
+          dispatchId={inspector.dispatchId}
+          workitemId={inspector.workitemId}
+          status={inspector.status}
+          theme={theme}
+          onClose={() => setInspector(null)}
         />
       ) : null}
     </View>

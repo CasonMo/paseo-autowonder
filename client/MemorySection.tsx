@@ -6,6 +6,7 @@ import { callToolRpc, type ToolDescriptor } from "../shared/contracts";
 import { ResourceSection } from "./ResourceSection";
 import { memoryResource } from "./resources";
 import { asNumber, asString, displayStatus, listItems } from "./lib";
+import { useI18n } from "./i18n";
 
 export function MemorySection({
   workspaceId,
@@ -24,6 +25,7 @@ export function MemorySection({
     decorateItem?: (item: Record<string, unknown>) => Record<string, unknown>,
   ) => void;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const agentsQuery = useQuery({
     queryKey: ["aw", workspaceId, "memory-owner-agents"],
@@ -72,20 +74,20 @@ export function MemorySection({
         const name = ownerRef !== undefined ? squadNames.get(ownerRef) : undefined;
         ownerName =
           ownerRef !== undefined
-            ? `${name ?? "小队"} #${ownerRef}`
-            : "小队";
+            ? `${name ?? t("小队")} #${ownerRef}`
+            : t("小队");
       } else if (scope === "AGENT") {
         const name = ownerRef !== undefined ? agentNames.get(ownerRef) : undefined;
         ownerName =
           ownerRef !== undefined
-            ? `${name ?? "数字员工"} #${ownerRef}`
-            : "数字员工";
+            ? `${name ?? t("数字员工")} #${ownerRef}`
+            : t("数字员工");
       } else if (ownerRef !== undefined) {
         ownerName = `#${ownerRef}`;
       }
       return { ...item, ownerName, scopeName: displayStatus(scope) };
     };
-  }, [agentsQuery.data, squadsQuery.data]);
+  }, [agentsQuery.data, squadsQuery.data, t]);
 
   return (
     <ResourceSection

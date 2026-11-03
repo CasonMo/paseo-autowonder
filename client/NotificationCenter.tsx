@@ -1,7 +1,8 @@
 import { useRpc } from "@getpaseo/plugin/client";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQueryClient } from "@tanstack/react-query";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "./Text";
 import {
   ackChangeRpc,
   ackChangesRpc,
@@ -20,6 +21,7 @@ import {
   textStyle,
 } from "./components";
 import { errorMessage, formatDateTime } from "./lib";
+import { useI18n } from "./i18n";
 
 function changeTone(
   change: WorkitemChange["changes"][number],
@@ -57,6 +59,7 @@ export function NotificationCenter({
   compact: boolean;
   onOpenWorkitem: (workspaceId: number, workitemId: number) => void;
 }) {
+  const { t } = useI18n();
   const changes = useChanges();
   const ackAll = useRpc(ackChangesRpc);
   const ackOne = useRpc(ackChangeRpc);
@@ -90,7 +93,10 @@ export function NotificationCenter({
     <View style={{ gap: 14 }}>
       <SectionHeader
         title="通知中心"
-        subtitle={`${unreadCount} 条未读 · 最近 ${history.length} 条变化`}
+        subtitle={t("{{count}} 条未读 · 最近 {{history}} 条变化", {
+          count: unreadCount,
+          history: history.length,
+        })}
         theme={theme}
         trailing={
           <Button
@@ -151,12 +157,13 @@ export function NotificationCenter({
             </Row>
             <Text
               numberOfLines={compact ? 2 : 3}
+              translate={false}
               style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "600" }}
             >
-              {item.title || `工单 #${item.id}`}
+              {item.title || t("工单 #{{id}}", { id: item.id })}
             </Text>
             <Text style={textStyle(theme, 11, true)}>
-              {item.workspaceName || `工作区 #${item.workspaceId}`} · #{item.id}
+              {item.workspaceName || t("工作区 #{{id}}", { id: item.workspaceId })} · #{item.id}
               {item.workType ? ` · ${item.workType}` : ""}
               {item.statusName ? ` · ${item.statusName}` : ""}
             </Text>

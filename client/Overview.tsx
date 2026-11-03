@@ -3,7 +3,8 @@ import { Icon } from "@getpaseo/plugin/client/ui";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "./Text";
 import { callToolRpc } from "../shared/contracts";
 import {
   Badge,
@@ -16,6 +17,7 @@ import {
   textStyle,
 } from "./components";
 import { asString, listItems, statusCategoryLabel } from "./lib";
+import { useI18n } from "./i18n";
 
 interface OverviewData {
   workitems: Record<string, unknown>[];
@@ -50,6 +52,7 @@ function StatCard({
   theme: PluginTheme;
   onPress?: () => void;
 }) {
+  const { t } = useI18n();
   const [focused, setFocused] = useState(false);
   const toneColor =
     tone === "success"
@@ -64,7 +67,7 @@ function StatCard({
   return (
     <Pressable
       accessibilityRole={onPress ? "button" : undefined}
-      accessibilityLabel={onPress ? `查看${label}` : undefined}
+      accessibilityLabel={onPress ? t("查看{{label}}", { label }) : undefined}
       disabled={!onPress}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
@@ -121,6 +124,7 @@ export function Overview({
   compact: boolean;
   onNavigate: (section: string) => void;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const query = useQuery({
     queryKey: ["aw", workspaceId, "overview"],
@@ -180,8 +184,15 @@ export function Overview({
         title="工作区概览"
         subtitle={
           query.data
-            ? `统计最近拉取的 ${query.data.workitems.length} 条工单、${query.data.agents.length} 个数字员工、${query.data.executors.length} 个执行器`
-            : "读取工作区状态…"
+            ? t(
+                "统计最近拉取的 {{workitems}} 条工单、{{agents}} 个数字员工、{{executors}} 个执行器",
+                {
+                  workitems: query.data.workitems.length,
+                  agents: query.data.agents.length,
+                  executors: query.data.executors.length,
+                },
+              )
+            : t("读取工作区状态…")
         }
         theme={theme}
         trailing={
@@ -274,6 +285,7 @@ export function Overview({
                     <Badge label={asString(item.statusName) || "—"} theme={theme} />
                     <Text
                       numberOfLines={1}
+                      translate={false}
                       style={{ ...textStyle(theme, 12), flex: 1 }}
                     >
                       #{asString(item.id)} {asString(item.title)}

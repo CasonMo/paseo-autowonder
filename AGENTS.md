@@ -31,7 +31,7 @@ Paseo plugin requirements we must follow when developing, reviewing, and releasi
   contains a personal access token and Paseo logs are readable by connected users.
 - The MCP URL comes from plugin settings and is sent only to the configured AutoWonder
   endpoint. Do not add telemetry or undisclosed network calls.
-- Document downloads and uploads may run the AutoWonder CLI through `npx`. This requires
+- Document downloads may run the AutoWonder CLI through `npx`. This requires
   explicit user consent, a validated package version, sanitized output, and disclosure in
   `OVERVIEW.md`. Declining consent must leave the CLI uninstalled.
 - All write operations require an explicit user gesture; destructive operations require

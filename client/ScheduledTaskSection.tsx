@@ -5,6 +5,7 @@ import { ResourceSection } from "./ResourceSection";
 import { scheduledTaskResource } from "./resources";
 import { asNumber } from "./lib";
 import { useWorkspaceNameMaps } from "./workspace-names";
+import { useI18n } from "./i18n";
 
 export function ScheduledTaskSection({
   workspaceId,
@@ -23,6 +24,7 @@ export function ScheduledTaskSection({
     decorateItem?: (item: Record<string, unknown>) => Record<string, unknown>,
   ) => void;
 }) {
+  const { t } = useI18n();
   const { agentNames, squadNames } = useWorkspaceNameMaps(workspaceId);
   const decorateItem = useMemo(
     () => (item: Record<string, unknown>): Record<string, unknown> => {
@@ -30,15 +32,15 @@ export function ScheduledTaskSection({
       const initialAgentId = asNumber(item.initialAgentId);
       const squadLabel =
         squadId !== undefined
-          ? `${squadNames.get(squadId) ?? "小队"} #${squadId}`
+          ? `${squadNames.get(squadId) ?? t("小队")} #${squadId}`
           : "—";
       const initialAgentLabel =
         initialAgentId !== undefined
-          ? `${agentNames.get(initialAgentId) ?? "数字员工"} #${initialAgentId}`
+          ? `${agentNames.get(initialAgentId) ?? t("数字员工")} #${initialAgentId}`
           : "—";
       return { ...item, squadLabel, initialAgentLabel };
     },
-    [agentNames, squadNames],
+    [agentNames, squadNames, t],
   );
 
   return (

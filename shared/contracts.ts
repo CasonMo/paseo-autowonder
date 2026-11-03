@@ -20,8 +20,10 @@ export const autowonderSettingsSchema = z.object({
   pollIntervalSeconds: z.number().int().min(0).max(3600).default(60),
   /** 是否在工单看板顶部显示风险雷达。 */
   riskRadarEnabled: z.boolean().default(true),
-  /** 是否允许插件通过 npx 下载并运行 AutoWonder CLI 完成文档上传/下载。 */
+  /** 是否允许插件通过 npx 下载并运行 AutoWonder CLI 完成文档下载。 */
   documentCliConsent: z.boolean().default(false),
+  /** auto 跟随 Paseo；也可固定为 English 或简体中文。 */
+  uiLocale: z.enum(["auto", "zh-CN", "en"]).default("auto"),
 });
 
 export type AutoWonderSettingsValues = z.infer<typeof autowonderSettingsSchema>;
@@ -29,11 +31,11 @@ export type AutoWonderSettingsValues = z.infer<typeof autowonderSettingsSchema>;
 export const autowonderSettings = defineSettings({
   id: "autowonder-workbench-config",
   scope: "host",
-  version: 3,
+  version: 4,
   schema: autowonderSettingsSchema,
   migrate: (values, fromVersion) => {
     const previous = (values ?? {}) as Record<string, unknown>;
-    if (fromVersion >= 3) return previous;
+    if (fromVersion >= 4) return previous;
     return {
       ...previous,
       pollIntervalSeconds:
@@ -42,6 +44,10 @@ export const autowonderSettings = defineSettings({
         typeof previous.riskRadarEnabled === "boolean" ? previous.riskRadarEnabled : true,
       documentCliConsent:
         typeof previous.documentCliConsent === "boolean" ? previous.documentCliConsent : false,
+      uiLocale:
+        previous.uiLocale === "zh-CN" || previous.uiLocale === "en" || previous.uiLocale === "auto"
+          ? previous.uiLocale
+          : "auto",
     };
   },
 });
@@ -158,21 +164,6 @@ const downloadedDocumentSchema = z.object({
   name: z.string(),
   path: z.string(),
   size: z.number().int().nonnegative().optional(),
-});
-
-export const uploadWorkitemDocumentRpc = defineRpc({
-  name: "autowonder.upload_workitem_document",
-  input: z.object({
-    workspaceId: z.number().int(),
-    workitemId: z.number().int(),
-    filePaths: z.array(z.string().min(1)).min(1).max(10),
-  }),
-  output: z.object({
-    ok: z.boolean(),
-    output: z.string().optional(),
-    error: z.string().optional(),
-    needsConsent: z.boolean().optional(),
-  }),
 });
 
 export const downloadWorkitemDocumentRpc = defineRpc({

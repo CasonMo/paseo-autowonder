@@ -1,5 +1,6 @@
 import type { ResourceDef } from "./ResourceSection";
 import { WorkitemDetailExtra } from "./WorkitemDetailExtra";
+import { WorkitemQuickActions } from "./WorkitemQuickActions";
 import { asString } from "./lib";
 
 export const workitemResource: ResourceDef = {
@@ -87,6 +88,7 @@ export const workitemResource: ResourceDef = {
       preset: (data) => ({ id: data.id }),
     },
   ],
+  ActionsExtra: WorkitemQuickActions,
   DetailExtra: WorkitemDetailExtra,
 };
 

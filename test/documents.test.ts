@@ -1,21 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  downloadWorkitemDocument,
-  uploadWorkitemDocuments,
-} from "../server/documents";
+import { downloadWorkitemDocument } from "../server/documents";
 
 test("document operations require explicit CLI consent", async () => {
-  const upload = await uploadWorkitemDocuments(
-    "https://example.test/mcp",
-    1,
-    2,
-    ["/tmp/example.md"],
-    false,
-  );
-  assert.equal(upload.ok, false);
-  assert.equal(upload.needsConsent, true);
-
   const download = await downloadWorkitemDocument(
     "https://example.test/mcp",
     1,

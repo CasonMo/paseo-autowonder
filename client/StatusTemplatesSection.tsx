@@ -3,7 +3,9 @@ import { Modal } from "@getpaseo/plugin/client/react-native";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
+import { Text } from "./Text";
+import { useI18n } from "./i18n";
 import { callToolRpc } from "../shared/contracts";
 import {
   Badge,
@@ -42,6 +44,7 @@ export function StatusTemplatesSection({
   theme: PluginTheme;
   compact: boolean;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const [workType, setWorkType] = useState<(typeof WORK_TYPES)[number]["value"]>("REQ");
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
@@ -146,6 +149,7 @@ function StatusTemplateDetail({
   compact: boolean;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const query = useQuery({
     queryKey: ["aw", workspaceId, "status-template-detail", item?.id],
@@ -170,7 +174,7 @@ function StatusTemplateDetail({
 
   return (
     <Modal
-      title={asString(data.name) || "状态模版"}
+      title={asString(data.name) || t("状态模版")}
       open={open}
       onOpenChange={(next) => {
         if (!next) onClose();
@@ -186,7 +190,9 @@ function StatusTemplateDetail({
           </Row>
 
           <View style={{ gap: 7 }}>
-            <Text style={textStyle(theme, 12, true)}>状态节点（{nodes.length}）</Text>
+            <Text style={textStyle(theme, 12, true)}>
+              {t("状态节点（{{count}}）", { count: nodes.length })}
+            </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
               {nodes.map((node) => (
                 <Card key={String(node.id)} theme={theme} style={{ width: compact ? "100%" : "48%" }}>
@@ -209,7 +215,9 @@ function StatusTemplateDetail({
           </View>
 
           <View style={{ gap: 7 }}>
-            <Text style={textStyle(theme, 12, true)}>推荐流转（{transitions.length}）</Text>
+            <Text style={textStyle(theme, 12, true)}>
+              {t("推荐流转（{{count}}）", { count: transitions.length })}
+            </Text>
             {transitions.length === 0 ? (
               <Text style={textStyle(theme, 11, true)}>暂无推荐流转。</Text>
             ) : (
