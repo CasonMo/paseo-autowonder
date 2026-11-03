@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="aw-mark" x1="24" y1="12" x2="104" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5EEAD4"/>
+      <stop offset="0.45" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <path d="M64 14C69.5 45.5 82.5 58.5 114 64C82.5 69.5 69.5 82.5 64 114C58.5 82.5 45.5 69.5 14 64C45.5 58.5 58.5 45.5 64 14Z" fill="url(#aw-mark)"/>
+  <path d="M104 24C106 34 108 36 118 38C108 40 106 42 104 52C102 42 100 40 90 38C100 36 102 34 104 24Z" fill="#67E8F9"/>
+  <circle cx="30" cy="102" r="5" fill="#A78BFA"/>
+</svg>
