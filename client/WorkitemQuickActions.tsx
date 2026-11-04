@@ -1,11 +1,11 @@
-import { useRpc } from "@getpaseo/plugin/client";
+import { openExternalUrl, useRpc, useSettings } from "@getpaseo/plugin/client";
 import { Modal, useToast } from "@getpaseo/plugin/client/react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
-import { callToolRpc } from "../shared/contracts";
+import { autowonderSettings, callToolRpc } from "../shared/contracts";
 import {
   Badge,
   Button,
@@ -26,6 +26,7 @@ import {
   displayStatus,
   errorMessage,
   listItems,
+  workitemWebUrl,
 } from "./lib";
 
 export function WorkitemQuickActions({
@@ -36,6 +37,7 @@ export function WorkitemQuickActions({
 }: DetailExtraProps) {
   const { t } = useI18n();
   const call = useRpc(callToolRpc);
+  const settings = useSettings(autowonderSettings);
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   const [transitionOpen, setTransitionOpen] = useState(false);
@@ -46,6 +48,14 @@ export function WorkitemQuickActions({
   const workitemId = asNumber(data.id);
   const templateId = asNumber(data.templateId);
   const currentStatusNodeId = asNumber(data.statusNodeId);
+  const webUrl =
+    workitemId !== undefined && settings.status === "ready"
+      ? workitemWebUrl(
+          settings.values.mcpUrl,
+          workitemId,
+          settings.values.webBaseUrl,
+        )
+      : null;
 
   const templateQuery = useQuery({
     queryKey: ["aw", workspaceId, "statusTemplate", templateId],
@@ -227,6 +237,19 @@ export function WorkitemQuickActions({
         disabled={busy !== null}
         onPress={() => setAssignOpen(true)}
       />
+      {webUrl ? (
+        <Button
+          label={t("在 AutoWonder 打开")}
+          theme={theme}
+          compact
+          icon="ExternalLink"
+          onPress={() => {
+            void openExternalUrl(webUrl).catch(() => {
+              toast.error(t("打开失败"));
+            });
+          }}
+        />
+      ) : null}
 
       {transitionOpen ? (
         <Modal
