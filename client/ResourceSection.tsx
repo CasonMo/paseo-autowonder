@@ -768,6 +768,7 @@ function ExtraSection({
   theme: PluginTheme;
   compact: boolean;
 }) {
+  const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const args = section.args
     ? section.args(data, workspaceId)
@@ -776,7 +777,12 @@ function ExtraSection({
     queryKey: ["aw", workspaceId, "extra", section.tool, data.id, JSON.stringify(args)],
     queryFn: async () => {
       const response = await call({ name: section.tool, arguments: args });
-      if (response.isError) throw new Error(response.contentText ?? `${section.title}加载失败`);
+      if (response.isError) {
+        throw new Error(
+          response.contentText ??
+            t("{{resource}}加载失败", { resource: t(section.title) }),
+        );
+      }
       return response.data;
     },
     enabled: data.id !== undefined,

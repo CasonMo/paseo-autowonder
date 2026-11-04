@@ -56,6 +56,7 @@ export function ChangeIndicator({
   theme: PluginPopoverProps["theme"];
   onPress: () => void;
 }) {
+  const { t } = useI18n();
   if (!data) return null;
   const total = data.totalCount;
   if (total === 0 && !data.error) return null;
@@ -64,8 +65,11 @@ export function ChangeIndicator({
       accessibilityRole="button"
       accessibilityLabel={
         data.error
-          ? "工单变化检查失败"
-          : `工单变化：共 ${total} 条，其中新增 ${data.newCount} 条`
+          ? t("工单变化检查失败")
+          : t("工单变化：共 {{total}} 条，其中新增 {{newCount}} 条", {
+              total,
+              newCount: data.newCount,
+            })
       }
       hitSlop={6}
       onPress={onPress}
@@ -152,7 +156,7 @@ function ChangePopoverContent({
         <Text style={textStyle(theme, 12, true)}>读取变化…</Text>
       ) : null}
       {changes.error ? (
-        <Text style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
+        <Text translate={false} style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
           {errorMessage(changes.error)}
         </Text>
       ) : null}
@@ -188,7 +192,7 @@ function ChangePopoverContent({
               />
             ) : null}
           </Row>
-          <Text style={textStyle(theme, 10, true)}>
+          <Text translate={false} style={textStyle(theme, 10, true)}>
             {data.intervalSeconds > 0
               ? t("每 {{interval}} 秒检查一次 · 我参与的每个状态最多 {{limit}} 条", {
                   interval: data.intervalSeconds,
@@ -202,7 +206,7 @@ function ChangePopoverContent({
               : ""}
           </Text>
           {data.error ? (
-            <Text style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
+            <Text translate={false} style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
               {data.error}
             </Text>
           ) : null}
@@ -288,7 +292,10 @@ function ChangeRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${item.title}，${item.changes.map(changeTagLabel).join("、")}`}
+      accessibilityLabel={t("{{title}}，{{changes}}", {
+        title: item.title,
+        changes: item.changes.map((change) => t(changeTagLabel(change))).join(t("、")),
+      })}
       onPress={onPress}
       style={({ pressed }) => ({
         padding: 9,
@@ -319,14 +326,25 @@ function ChangeRow({
             }
           />
         ))}
-        <Text style={{ ...textStyle(theme, 10, true), marginLeft: "auto" }}>
+        <Text
+          translate={false}
+          style={{ ...textStyle(theme, 10, true), marginLeft: "auto" }}
+        >
           {item.workspaceName || t("工作区 #{{id}}", { id: item.workspaceId })} · #{item.id}
         </Text>
       </Row>
-      <Text numberOfLines={2} style={{ color: theme.colors.foreground, fontSize: 12 }}>
+      <Text
+        numberOfLines={2}
+        translate={false}
+        style={{ color: theme.colors.foreground, fontSize: 12 }}
+      >
         {item.title}
       </Text>
-      {detail ? <Text style={textStyle(theme, 11, true)}>{detail}</Text> : null}
+      {detail ? (
+        <Text translate={false} style={textStyle(theme, 11, true)}>
+          {detail}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }

@@ -252,7 +252,11 @@ export function ToolRunner({
               <Badge label="MCP 工具" theme={theme} tone="accent" />
               {destructive ? <Badge label="需谨慎" theme={theme} tone="danger" /> : null}
             </Row>
-            <Text selectable style={{ ...textStyle(theme, 11, true), lineHeight: 16 }}>
+            <Text
+              selectable
+              translate={false}
+              style={{ ...textStyle(theme, 11, true), lineHeight: 16 }}
+            >
               {tool.description || tool.name}
             </Text>
           </View>
@@ -266,8 +270,10 @@ export function ToolRunner({
             />
             <Chip label="JSON" active={rawMode} theme={theme} onPress={() => setRawMode(true)} />
             {Object.keys(relevantPreset).length > 0 ? (
-              <Text style={textStyle(theme, 11, true)}>
-                已预填 {Object.keys(relevantPreset).length} 个参数
+              <Text translate={false} style={textStyle(theme, 11, true)}>
+                {t("已预填 {{count}} 个参数", {
+                  count: Object.keys(relevantPreset).length,
+                })}
               </Text>
             ) : null}
           </Row>
@@ -341,8 +347,11 @@ export function ToolRunner({
                   <Icon name="Check" size={12} color={theme.colors.statusDanger} />
                 ) : null}
               </View>
-              <Text style={{ color: theme.colors.statusDanger, fontSize: 12, flex: 1 }}>
-                我确认执行这个删除/取消类操作
+              <Text
+                translate={false}
+                style={{ color: theme.colors.statusDanger, fontSize: 12, flex: 1 }}
+              >
+                {t("我确认执行这个删除/取消类操作")}
               </Text>
             </Pressable>
           ) : null}
@@ -371,12 +380,15 @@ export function ToolRunner({
               }}
             >
               <Text
+                translate={false}
                 style={{
                   color: result.ok ? theme.colors.statusSuccess : theme.colors.statusDanger,
                   fontSize: 12,
                 }}
               >
-                {result.ok ? "执行成功" : result.message ?? "执行失败"}
+                {result.ok
+                  ? t("执行成功")
+                  : result.message ?? t("执行失败")}
               </Text>
               <JsonBlock value={result.data} theme={theme} maxHeight={280} />
             </Card>

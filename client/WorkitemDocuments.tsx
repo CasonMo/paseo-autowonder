@@ -194,7 +194,7 @@ export function WorkitemDocuments({
 
         {documentsQuery.isLoading ? <Loading theme={theme} label="读取文档…" /> : null}
         {documentsQuery.error ? (
-          <Text style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
+          <Text translate={false} style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
             {errorMessage(documentsQuery.error)}
           </Text>
         ) : null}
@@ -203,9 +203,11 @@ export function WorkitemDocuments({
         ) : null}
         {documents.map((document) => {
           const artifactId = asNumber(document.id);
-          const name = asString(document.name) || `文档 #${artifactId ?? "—"}`;
+          const name =
+            asString(document.name) ||
+            t("文档 #{{id}}", { id: artifactId ?? "—" });
           const meta = [
-            asString(document.type) || "文档",
+            asString(document.type) || t("文档"),
             formatSize(document.size),
             compact ? "" : formatDateTime(document.gmtCreate),
           ]

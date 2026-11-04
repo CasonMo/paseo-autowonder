@@ -309,8 +309,8 @@ export function WorkitemsSection({
         <Card theme={theme}>
           <Row gap={8}>
             <Text style={textStyle(theme, 12, true)}>风险雷达</Text>
-            <Text style={textStyle(theme, 10, true)}>
-              基于当前已加载工单，点选可筛选
+            <Text translate={false} style={textStyle(theme, 10, true)}>
+              {t("基于当前已加载工单，点选可筛选")}
             </Text>
             {riskFilter ? (
               <Button
@@ -541,7 +541,7 @@ export function WorkitemsSection({
                     const id = asNumber(item.id);
                     const type = asString(item.workType);
                     const priority = priorityLabel(item.priority);
-                    const assignee = asString(item.assigneeLabel) || "未指派";
+                    const assignee = asString(item.assigneeLabel) || t("未指派");
                     const assigneeInitial = assignee.replace(/[（(].*$/, "").trim().slice(0, 1) || "?";
                     return (
                       <Pressable
@@ -568,8 +568,13 @@ export function WorkitemsSection({
                           {priority ? (
                             <Badge label={priority} theme={theme} tone={priorityTone(item.priority)} />
                           ) : null}
-                          <Text style={{ ...textStyle(theme, 11, true), marginLeft: "auto" }}>
-                            {[sourceLabel(item), `#${String(id ?? "")}`].filter(Boolean).join(" · ")}
+                          <Text
+                            translate={false}
+                            style={{ ...textStyle(theme, 11, true), marginLeft: "auto" }}
+                          >
+                            {[t(sourceLabel(item)), `#${String(id ?? "")}`]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </Text>
                         </Row>
                         <Text
@@ -678,8 +683,11 @@ export function WorkitemsSection({
         </ScrollView>
       ) : null}
 
-      <Text style={textStyle(theme, 10, true)}>
-        每个状态最多展示 {WORKITEMS_PER_STATUS} 条工单（按工单 ID 倒序）；更早的工单不会出现在看板或变化提示中。
+      <Text translate={false} style={textStyle(theme, 10, true)}>
+        {t(
+          "每个状态最多展示 {{limit}} 条工单（按工单 ID 倒序）；更早的工单不会出现在看板或变化提示中。",
+          { limit: WORKITEMS_PER_STATUS },
+        )}
       </Text>
 
       {runner ? (

@@ -19,6 +19,7 @@ import { WorkitemDocuments } from "./WorkitemDocuments";
 import {
   asNumber,
   asString,
+  displayStatus,
   errorMessage,
   formatDateTime,
   listItems,
@@ -237,12 +238,15 @@ export function WorkitemDetailExtra({
               mentionMatches.map((agent) => {
                 const id = asNumber(agent.id);
                 if (id === undefined) return null;
-                const name = asString(agent.name) || "数字员工";
+                const name = asString(agent.name) || t("数字员工");
                 return (
                   <Pressable
                     key={id}
                     accessibilityRole="button"
-                    accessibilityLabel={`提及数字员工 ${name} #${id}`}
+                    accessibilityLabel={t("提及数字员工 {{name}} #{{id}}", {
+                      name,
+                      id,
+                    })}
                     onPress={() => insertAgentMention(agent)}
                     style={({ pressed }) => ({
                       paddingHorizontal: 9,
@@ -255,11 +259,15 @@ export function WorkitemDetailExtra({
                     })}
                   >
                     <View style={{ flex: 1, gap: 1 }}>
-                      <Text style={{ color: theme.colors.foreground, fontSize: 12 }}>
+                      <Text
+                        translate={false}
+                        style={{ color: theme.colors.foreground, fontSize: 12 }}
+                      >
                         {name} #{id}
                       </Text>
-                      <Text style={textStyle(theme, 10, true)}>
-                        {asString(agent.roleName) || "数字员工"} · {asString(agent.status) || "—"}
+                      <Text translate={false} style={textStyle(theme, 10, true)}>
+                        {asString(agent.roleName) || t("数字员工")} ·{" "}
+                        {t(displayStatus(asString(agent.status))) || "—"}
                       </Text>
                     </View>
                     <Text style={{ color: theme.colors.accent, fontSize: 11 }}>提及</Text>

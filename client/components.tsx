@@ -55,10 +55,11 @@ export function Chip({
   disabled?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
+  const { t } = useI18n();
   return (
     <Pressable
       accessibilityRole={onPress ? "button" : "text"}
-      accessibilityLabel={label}
+      accessibilityLabel={t(label)}
       accessibilityState={{ selected: active }}
       disabled={disabled || !onPress}
       hitSlop={6}
@@ -151,6 +152,7 @@ export function Button({
   iconOnly?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
+  const { t } = useI18n();
   const background =
     tone === "primary"
       ? theme.colors.accent
@@ -166,7 +168,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={t(label)}
       disabled={disabled}
       hitSlop={6}
       onFocus={() => setFocused(true)}
@@ -404,6 +406,7 @@ export function KeyValueRows({
   theme: PluginTheme;
   columns?: number;
 }) {
+  const { t } = useI18n();
   const visible = entries.filter((entry) => {
     const value = entry.value;
     return value !== null && value !== undefined && value !== "";
@@ -420,13 +423,22 @@ export function KeyValueRows({
             gap: 2,
           }}
         >
-          <Text style={{ color: theme.colors.foregroundMuted, fontSize: 12 }}>{entry.label}</Text>
-          <Text selectable style={{ color: theme.colors.foreground, fontSize: 13 }}>
+          <Text
+            translate={false}
+            style={{ color: theme.colors.foregroundMuted, fontSize: 12 }}
+          >
+            {t(entry.label)}
+          </Text>
+          <Text
+            selectable
+            translate={false}
+            style={{ color: theme.colors.foreground, fontSize: 13 }}
+          >
             {entry.label === "优先级"
-              ? priorityLabel(entry.value)
+              ? t(priorityLabel(entry.value))
               : typeof entry.value === "string"
-                ? displayStatus(entry.value)
-                : formatValue(entry.value)}
+                ? t(displayStatus(entry.value))
+                : t(formatValue(entry.value))}
           </Text>
         </View>
       ))}

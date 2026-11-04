@@ -479,8 +479,8 @@ export function ExecutionsSection({
                 />
               </Row>
               {compact ? null : (
-                <Text style={textStyle(theme, 11, true)}>
-                  活动、轨迹与诊断以时间线和结构化视图展示，原始 JSON 可展开查看。
+                <Text translate={false} style={textStyle(theme, 11, true)}>
+                  {t("活动、轨迹与诊断以时间线和结构化视图展示，原始 JSON 可展开查看。")}
                 </Text>
               )}
             </Card>

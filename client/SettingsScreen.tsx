@@ -117,8 +117,8 @@ export function SettingsPanel({
   if (settings.status === "error") {
     return (
       <Card theme={theme}>
-        <Text style={{ color: theme.colors.statusDanger, fontSize: 13 }}>
-          配置读取失败：{settings.error}
+        <Text translate={false} style={{ color: theme.colors.statusDanger, fontSize: 13 }}>
+          {t("配置读取失败：{{error}}", { error: settings.error })}
         </Text>
         <Button label="重新读取" onPress={() => void settings.reload()} theme={theme} />
       </Card>
@@ -127,8 +127,8 @@ export function SettingsPanel({
   if (settings.status === "invalid") {
     return (
       <Card theme={theme}>
-        <Text style={{ color: theme.colors.statusDanger, fontSize: 13 }}>
-          配置数据无效：{settings.error}
+        <Text translate={false} style={{ color: theme.colors.statusDanger, fontSize: 13 }}>
+          {t("配置数据无效：{{error}}", { error: settings.error })}
         </Text>
         <Button label="重置配置" onPress={() => void settings.reset()} theme={theme} />
       </Card>
@@ -391,19 +391,26 @@ export function SettingsPanel({
 
       <View style={{ gap: 8 }}>
         <Text style={textStyle(theme, 13)}>连接后可以做什么</Text>
-        <Text style={{ ...textStyle(theme, 12, true), lineHeight: 19 }}>
-          · 工单：按工作区浏览、筛选、查看正文与评论，执行流转、指派、评论、编辑、暂停/恢复、交付恢复与取消。
-          {"\n"}· 数字员工：查看在线状态与版本，提交审核、发布、设置默认 SDLC、绑定仓库与能力。
-          {"\n"}· 研发配置：管理 SDLC、流程步骤、小队、仓库与 Repo Map、能力/Skill/MCP、能力分类。
-          {"\n"}· 7x24：管理定时任务与运行记录、执行器启动配置与启动命令。
-          {"\n"}· 记忆：按组织/小队/数字员工搜索、读取、编辑与删除记忆。
-          {"\n"}· 全部工具：内置工具清单与 JSON Schema 表单，任何新工具无需改插件即可调用。
+        <Text
+          translate={false}
+          style={{ ...textStyle(theme, 12, true), lineHeight: 19 }}
+        >
+          {[
+            "· 工单：按工作区浏览、筛选、查看正文与评论，执行流转、指派、评论、编辑、暂停/恢复、交付恢复与取消。",
+            "· 数字员工：查看在线状态与版本，提交审核、发布、设置默认 SDLC、绑定仓库与能力。",
+            "· 研发配置：管理 SDLC、流程步骤、小队、仓库与 Repo Map、能力/Skill/MCP、能力分类。",
+            "· 7x24：管理定时任务与运行记录、执行器启动配置与启动命令。",
+            "· 记忆：按组织/小队/数字员工搜索、读取、编辑与删除记忆。",
+            "· 全部工具：内置工具清单与 JSON Schema 表单，任何新工具无需改插件即可调用。",
+          ]
+            .map((line) => t(line))
+            .join("\n")}
         </Text>
       </View>
 
       {compact ? (
-        <Text style={{ ...textStyle(theme, 11, true), lineHeight: 17 }}>
-          移动端只展示核心字段；复杂的 JSON 参数建议在桌面端或工具控制台中编辑。
+        <Text translate={false} style={{ ...textStyle(theme, 11, true), lineHeight: 17 }}>
+          {t("移动端只展示核心字段；复杂的 JSON 参数建议在桌面端或工具控制台中编辑。")}
         </Text>
       ) : null}
 

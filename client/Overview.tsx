@@ -235,7 +235,7 @@ export function Overview({
             <StatCard
               label="数字员工在线"
               value={`${stats.onlineAgents}/${query.data?.agents.length ?? 0}`}
-              hint="online / total"
+              hint="在线 / 总数"
               tone="success"
               theme={theme}
               onPress={() => onNavigate("agents")}
@@ -243,7 +243,7 @@ export function Overview({
             <StatCard
               label="启用中的 SDLC"
               value={`${stats.enabledSdls}/${query.data?.sdlcs.length ?? 0}`}
-              hint="enabled / total"
+              hint="启用 / 总数"
               tone="accent"
               theme={theme}
               onPress={() => onNavigate("sdlcs")}
@@ -258,7 +258,7 @@ export function Overview({
             <StatCard
               label="运行中的定时任务"
               value={`${stats.activeTasks}/${query.data?.tasks.length ?? 0}`}
-              hint="active / 前 100 条"
+              hint="活跃 / 前 100 条"
               tone="warning"
               theme={theme}
               onPress={() => onNavigate("scheduled-tasks")}
@@ -266,7 +266,7 @@ export function Overview({
             <StatCard
               label="执行器在线"
               value={`${stats.onlineExecutors}/${query.data?.executors.length ?? 0}`}
-              hint="online / total"
+              hint="在线 / 总数"
               tone="success"
               theme={theme}
               onPress={() => onNavigate("executors")}

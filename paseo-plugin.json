@@ -1,11 +1,11 @@
 {
   "id": "autowonder-workbench",
   "name": "AutoWonder Workbench",
-  "description": "Manage AutoWonder workitems, digital workers, SDLC flows, repositories, skills, scheduled tasks, executors, memories, notifications, risk signals, and execution monitoring from Paseo.",
+  "description": "Manage AutoWonder workitems, digital workers, SDLC flows, repositories, skills, scheduled tasks, executors, memories, notifications, risk signals, and execution monitoring from Paseo, with direct workitem links into AutoWonder.",
   "translations": {
     "zh-CN": {
       "name": "AutoWonder 工作台",
-      "description": "在 Paseo 中管理 AutoWonder：工单、数字员工、SDLC、仓库、能力、定时任务、执行器、记忆、通知中心、风险雷达与执行监控，并内置全部 MCP 工具的动态调用台。"
+      "description": "在 Paseo 中管理 AutoWonder：工单、数字员工、SDLC、仓库、能力、定时任务、执行器、记忆、通知中心、风险雷达与执行监控，支持工单网页直达，并内置全部 MCP 工具的动态调用台。"
     }
   },
   "media": [

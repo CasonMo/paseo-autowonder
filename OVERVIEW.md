@@ -4,7 +4,7 @@ AutoWonder Workbench brings AutoWonder into Paseo. It covers workitems, digital 
 
 ## Setup
 
-Add the AutoWonder MCP URL in the plugin settings. The URL normally contains a personal access token, so it is stored only in the daemon's plugin settings. The Open in AutoWonder action derives the web URL from the MCP URL; for internal or standalone deployments, set the optional web root such as `http://autowonder.example.com:7001`. An optional polling interval controls background workitem change checks; set it to 0 to disable polling.
+Add the AutoWonder MCP URL in the plugin settings. The URL normally contains a personal access token, so it is stored only in the daemon's plugin settings. The Open in AutoWonder action derives the web URL from the MCP URL; for internal or standalone deployments, set the optional web root such as `http://autowonder.example.com:7001`. It uses only the origin, deployment path, and `/workitems/<id>` route, never the MCP token. An optional polling interval controls background workitem change checks; set it to 0 to disable polling.
 
 The interface is available in English and Simplified Chinese. It follows the Paseo app language by default; the language can also be set explicitly in the plugin settings.
 

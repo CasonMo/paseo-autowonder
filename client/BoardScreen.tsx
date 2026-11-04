@@ -253,7 +253,7 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
       {workspaceMenuOpen ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="关闭工作空间菜单"
+          accessibilityLabel={t("关闭工作空间菜单")}
           onPress={() => setWorkspaceMenuOpen(false)}
           style={{
             position: "absolute",
@@ -292,8 +292,12 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
               >
                 AutoWonder
               </Text>
-              <Text numberOfLines={1} style={textStyle(theme, 12, true)}>
-                工作台 · {serverLabel || "MCP"} · {tools.length} 个工具 · {hostOf(mcpUrl)}
+              <Text numberOfLines={1} translate={false} style={textStyle(theme, 12, true)}>
+                {t("工作台 · {{server}} · {{count}} 个工具 · {{host}}", {
+                  server: serverLabel || "MCP",
+                  count: tools.length,
+                  host: hostOf(mcpUrl),
+                })}
               </Text>
             </View>
           </View>
@@ -302,7 +306,7 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
           <View style={{ position: "relative", zIndex: 50 }}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="切换工作空间"
+              accessibilityLabel={t("切换工作空间")}
               accessibilityState={{ expanded: workspaceMenuOpen }}
               disabled={projects.length === 0}
               hitSlop={6}
@@ -337,6 +341,7 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
               >
                 <Text
                   numberOfLines={1}
+                  translate={false}
                   style={{
                     color: theme.colors.foreground,
                     fontSize: 12,
@@ -344,7 +349,9 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
                     flexShrink: 1,
                   }}
                 >
-                  {currentProject ? asString(currentProject.name) : "工作空间"}
+                  {currentProject
+                    ? asString(currentProject.name)
+                    : t("工作空间")}
                 </Text>
                 {currentProject ? (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -434,6 +441,7 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                           <Text
                             numberOfLines={1}
+                            translate={false}
                             style={{
                               color: theme.colors.foreground,
                               fontSize: 13,
@@ -447,8 +455,12 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
                             <Icon name="Check" size={14} color={theme.colors.accent} />
                           ) : null}
                         </View>
-                        <Text numberOfLines={1} style={textStyle(theme, 11, true)}>
-                          {displayStatus(asString(project.accessLevel))}
+                        <Text
+                          numberOfLines={1}
+                          translate={false}
+                          style={textStyle(theme, 11, true)}
+                        >
+                          {t(displayStatus(asString(project.accessLevel)))}
                           {asString(project.description)
                             ? ` · ${asString(project.description)}`
                             : ""}
@@ -591,7 +603,9 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
           ) : null}
           {toolsQuery.error ? (
             <ErrorBox
-              error={`工具清单加载失败：${errorMessage(toolsQuery.error)}`}
+              error={t("工具清单加载失败：{{error}}", {
+                error: errorMessage(toolsQuery.error),
+              })}
               theme={theme}
               onRetry={() => void toolsQuery.refetch()}
             />
@@ -771,7 +785,7 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="关闭工单详情"
+            accessibilityLabel={t("关闭工单详情")}
             onPress={() => setDetail(null)}
             style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
           />
@@ -832,6 +846,7 @@ function WorkspaceSwitcher({
   onSelect: (id: number) => void;
 }) {
   const [focused, setFocused] = useState(false);
+  const { t } = useI18n();
   const access = asString(currentProject?.accessLevel);
   const accessColor =
     access === "ADMIN"
@@ -843,7 +858,7 @@ function WorkspaceSwitcher({
     <View style={{ position: "relative", zIndex: open ? 60 : 1 }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="切换工作空间"
+        accessibilityLabel={t("切换工作空间")}
         accessibilityState={{ expanded: open }}
         disabled={projects.length === 0}
         hitSlop={6}
@@ -867,6 +882,7 @@ function WorkspaceSwitcher({
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 5 }}>
           <Text
             numberOfLines={1}
+            translate={false}
             style={{
               color: theme.colors.foreground,
               fontSize: 12,
@@ -874,7 +890,9 @@ function WorkspaceSwitcher({
               flexShrink: 1,
             }}
           >
-            {currentProject ? asString(currentProject.name) : "工作空间"}
+            {currentProject
+              ? asString(currentProject.name)
+              : t("工作空间")}
           </Text>
           {currentProject ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -951,6 +969,7 @@ function WorkspaceSwitcher({
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Text
                       numberOfLines={1}
+                      translate={false}
                       style={{
                         color: theme.colors.foreground,
                         fontSize: 13,
@@ -964,9 +983,15 @@ function WorkspaceSwitcher({
                       <Icon name="Check" size={14} color={theme.colors.accent} />
                     ) : null}
                   </View>
-                  <Text numberOfLines={1} style={textStyle(theme, 11, true)}>
-                    {displayStatus(asString(project.accessLevel))}
-                    {asString(project.description) ? ` · ${asString(project.description)}` : ""}
+                  <Text
+                    numberOfLines={1}
+                    translate={false}
+                    style={textStyle(theme, 11, true)}
+                  >
+                    {t(displayStatus(asString(project.accessLevel)))}
+                    {asString(project.description)
+                      ? ` · ${asString(project.description)}`
+                      : ""}
                   </Text>
                 </Pressable>
               );

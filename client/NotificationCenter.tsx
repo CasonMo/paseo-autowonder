@@ -119,7 +119,9 @@ export function NotificationCenter({
         />
       ) : null}
       {data?.error ? (
-        <Text style={{ color: theme.colors.statusDanger, fontSize: 11 }}>{data.error}</Text>
+        <Text translate={false} style={{ color: theme.colors.statusDanger, fontSize: 11 }}>
+          {data.error}
+        </Text>
       ) : null}
       {!changes.isLoading && !changes.error && history.length === 0 ? (
         <Empty
@@ -162,7 +164,7 @@ export function NotificationCenter({
             >
               {item.title || t("工单 #{{id}}", { id: item.id })}
             </Text>
-            <Text style={textStyle(theme, 11, true)}>
+            <Text translate={false} style={textStyle(theme, 11, true)}>
               {item.workspaceName || t("工作区 #{{id}}", { id: item.workspaceId })} · #{item.id}
               {item.workType ? ` · ${item.workType}` : ""}
               {item.statusName ? ` · ${item.statusName}` : ""}

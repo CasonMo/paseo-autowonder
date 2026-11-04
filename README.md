@@ -18,7 +18,7 @@ Paseo 插件，用一套 MCP 配置管理 AutoWonder。
 
 ## 配置
 
-在 Paseo 中打开插件设置，填写 AutoWonder 的 MCP URL。该地址通常包含个人访问 token，保存在本机 daemon 的插件设置中，请不要分享。工单详情里的“在 AutoWonder 打开”默认从 MCP URL 推导网页地址；内网或独立部署可另外填写网页根地址，例如 `http://autowonder.example.com:7001`。
+在 Paseo 中打开插件设置，填写 AutoWonder 的 MCP URL。该地址通常包含个人访问 token，保存在本机 daemon 的插件设置中，请不要分享。工单详情里的“在 AutoWonder 打开”默认从 MCP URL 推导网页地址；内网或独立部署可另外填写网页根地址，例如 `http://autowonder.example.com:7001`。该链接只使用网页地址和 `/workitems/<id>`，不会携带 MCP token。
 
 ## 开发
 

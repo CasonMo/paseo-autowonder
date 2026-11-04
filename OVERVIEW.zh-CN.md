@@ -4,7 +4,7 @@ AutoWonder 工作台把 AutoWonder 带进 Paseo，覆盖工单、数字员工、
 
 ## 配置
 
-在插件设置中填写 AutoWonder MCP URL。该地址通常包含个人访问 token，只保存在本机 daemon 的插件设置中。工单详情的“在 AutoWonder 打开”会根据 MCP URL 自动推导网页地址；内网或独立部署可在可选网页地址中填写根地址，例如 `http://autowonder.example.com:7001`。可选的轮询间隔控制后台工单变化检查；设为 0 可关闭轮询。
+在插件设置中填写 AutoWonder MCP URL。该地址通常包含个人访问 token，只保存在本机 daemon 的插件设置中。工单详情的“在 AutoWonder 打开”会根据 MCP URL 自动推导网页地址；内网或独立部署可在可选网页地址中填写根地址，例如 `http://autowonder.example.com:7001`。该按钮只使用 origin、部署路径和 `/workitems/<id>`，不会把 MCP token 带到网页。可选的轮询间隔控制后台工单变化检查；设为 0 可关闭轮询。
 
 界面提供英文和简体中文，默认跟随 Paseo 应用语言，也可以在插件设置中单独指定。
 

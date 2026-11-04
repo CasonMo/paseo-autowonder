@@ -810,7 +810,8 @@ export function DispatchInspectorModal({
                               flex: 1,
                             }}
                           >
-                            {asString(item.name) || `诊断 #${index + 1}`}
+                            {asString(item.name) ||
+                              t("诊断 #{{id}}", { id: index + 1 })}
                           </Text>
                           <Text style={textStyle(theme, 10, true)}>
                             {formatBytes(asNumber(item.sizeBytes))}

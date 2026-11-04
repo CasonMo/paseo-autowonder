@@ -23,6 +23,7 @@ import {
   asNumber,
   asRecord,
   asString,
+  displayStatus,
   errorMessage,
   listItems,
 } from "./lib";
@@ -358,7 +359,7 @@ export function WorkitemQuickActions({
                 {agents.map((agent) => {
                   const id = asNumber(agent.id);
                   if (id === undefined) return null;
-                  const name = asString(agent.name) || "数字员工";
+                  const name = asString(agent.name) || t("数字员工");
                   const label = `${name} #${id}`;
                   return (
                     <Pressable
@@ -378,11 +379,15 @@ export function WorkitemQuickActions({
                       }}
                     >
                       <View style={{ flex: 1, gap: 2 }}>
-                        <Text style={{ color: theme.colors.foreground, fontSize: 13 }}>
+                        <Text
+                          translate={false}
+                          style={{ color: theme.colors.foreground, fontSize: 13 }}
+                        >
                           {label}
                         </Text>
-                        <Text style={textStyle(theme, 11, true)}>
-                          {asString(agent.roleName)} · {asString(agent.status)}
+                        <Text translate={false} style={textStyle(theme, 11, true)}>
+                          {asString(agent.roleName)} ·{" "}
+                          {t(displayStatus(asString(agent.status)))}
                         </Text>
                       </View>
                       <Badge label={asString(agent.status) || "—"} theme={theme} />

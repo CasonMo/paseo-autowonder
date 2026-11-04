@@ -20,7 +20,15 @@ import {
   SectionHeader,
   textStyle,
 } from "./components";
-import { asArray, asNumber, asRecord, asString, formatDateTime, listItems } from "./lib";
+import {
+  asArray,
+  asNumber,
+  asRecord,
+  asString,
+  formatDateTime,
+  listItems,
+  workTypeLabel,
+} from "./lib";
 
 const WORK_TYPES = [
   { value: "REQ", label: "需求 REQ" },
@@ -110,13 +118,20 @@ export function StatusTemplatesSection({
             })}
           >
             <Row gap={7}>
-              <Text style={{ color: theme.colors.foreground, fontSize: 14, fontWeight: "500", flex: 1 }}>
+              <Text
+                translate={false}
+                style={{ color: theme.colors.foreground, fontSize: 14, fontWeight: "500", flex: 1 }}
+              >
                 {asString(item.name)}
               </Text>
               {item.isDefault === true ? <Badge label="默认" theme={theme} tone="accent" /> : null}
             </Row>
-            <Text style={textStyle(theme, 11, true)}>
-              #{String(item.id ?? "")} · {asString(item.workType)} · 更新于 {formatDateTime(item.gmtModified)}
+            <Text translate={false} style={textStyle(theme, 11, true)}>
+              {t("{{id}} · {{type}} · 更新于 {{time}}", {
+                id: `#${String(item.id ?? "")}`,
+                type: t(workTypeLabel(asString(item.workType))),
+                time: formatDateTime(item.gmtModified),
+              })}
             </Text>
           </Pressable>
         ))}
@@ -197,7 +212,10 @@ function StatusTemplateDetail({
               {nodes.map((node) => (
                 <Card key={String(node.id)} theme={theme} style={{ width: compact ? "100%" : "48%" }}>
                   <Row gap={7}>
-                    <Text style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "500", flex: 1 }}>
+                    <Text
+                      translate={false}
+                      style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "500", flex: 1 }}
+                    >
                       {asString(node.name)}
                     </Text>
                     <Badge
@@ -206,7 +224,7 @@ function StatusTemplateDetail({
                       tone={nodeCategoryTone(asString(node.category))}
                     />
                   </Row>
-                  <Text style={textStyle(theme, 11, true)}>
+                  <Text translate={false} style={textStyle(theme, 11, true)}>
                     {asString(node.code)} · #{String(node.id ?? "")}
                   </Text>
                 </Card>
@@ -222,7 +240,11 @@ function StatusTemplateDetail({
               <Text style={textStyle(theme, 11, true)}>暂无推荐流转。</Text>
             ) : (
               transitions.map((transition) => (
-                <Text key={String(transition.id)} style={textStyle(theme, 12)}>
+                <Text
+                  key={String(transition.id)}
+                  translate={false}
+                  style={textStyle(theme, 12)}
+                >
                   {nodeName(transition.fromNodeId)} → {nodeName(transition.toNodeId)} ·{" "}
                   {asString(transition.name)}
                 </Text>
