@@ -1,7 +1,7 @@
 {
   "name": "autowonder-workbench",
   "private": true,
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Manage AutoWonder workitems, digital workers, SDLC flows, repositories, skills, scheduled tasks, executors, memories, notifications, risk signals, and execution monitoring from Paseo.",
   "repository": {
     "type": "git",

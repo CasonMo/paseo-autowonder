@@ -5,7 +5,7 @@ import { workitemWebUrl } from "../client/lib";
 test("builds an AutoWonder workitem URL from the MCP endpoint", () => {
   assert.equal(
     workitemWebUrl("https://example.com/app/sdlc/api/mcp/token/", 42),
-    "https://example.com/sdlc/workitems/42",
+    "https://example.com/app/sdlc/workitems/42",
   );
 });
 

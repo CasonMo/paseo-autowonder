@@ -319,9 +319,7 @@ export function workitemWebUrl(
     const parsed = new URL(mcpUrl);
     if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
     const match = parsed.pathname.match(/^(.*?)\/api\/mcp(?:\/.*)?$/);
-    const prefix = (match?.[1] ?? "")
-      .replace(/\/$/, "")
-      .replace(/^\/app(?=\/|$)/, "");
+    const prefix = (match?.[1] ?? "").replace(/\/$/, "");
     return `${parsed.origin}${prefix}/workitems/${workitemId}`;
   } catch {
     return null;
