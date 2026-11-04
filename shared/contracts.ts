@@ -16,6 +16,8 @@ export type WorkitemStatusCategory = (typeof WORKITEM_STATUS_CATEGORIES)[number]
 export const autowonderSettingsSchema = z.object({
   /** AutoWonder 的 MCP HTTP 地址，通常包含个人访问 token。 */
   mcpUrl: z.string().default(""),
+  /** AutoWonder 网页根地址；留空时从 MCP URL 自动推导。 */
+  webBaseUrl: z.string().default(""),
   /** 工单变化轮询间隔（秒）；0 表示关闭。 */
   pollIntervalSeconds: z.number().int().min(0).max(3600).default(60),
   /** 是否在工单看板顶部显示风险雷达。 */
@@ -31,13 +33,14 @@ export type AutoWonderSettingsValues = z.infer<typeof autowonderSettingsSchema>;
 export const autowonderSettings = defineSettings({
   id: "autowonder-workbench-config",
   scope: "host",
-  version: 4,
+  version: 5,
   schema: autowonderSettingsSchema,
   migrate: (values, fromVersion) => {
     const previous = (values ?? {}) as Record<string, unknown>;
-    if (fromVersion >= 4) return previous;
+    if (fromVersion >= 5) return previous;
     return {
       ...previous,
+      webBaseUrl: typeof previous.webBaseUrl === "string" ? previous.webBaseUrl : "",
       pollIntervalSeconds:
         typeof previous.pollIntervalSeconds === "number" ? previous.pollIntervalSeconds : 60,
       riskRadarEnabled:

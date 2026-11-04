@@ -1,4 +1,4 @@
-import { useRpc } from "@getpaseo/plugin/client";
+import { openExternalUrl, useRpc, useSettings } from "@getpaseo/plugin/client";
 import { TextInput, useToast } from "@getpaseo/plugin/client/react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type ComponentRef } from "react";
@@ -11,6 +11,7 @@ import {
   Card,
   Loading,
   MarkdownBlock,
+  Row,
   textStyle,
 } from "./components";
 import type { DetailExtraProps } from "./ResourceSection";
@@ -21,7 +22,9 @@ import {
   errorMessage,
   formatDateTime,
   listItems,
+  workitemWebUrl,
 } from "./lib";
+import { autowonderSettings } from "../shared/contracts";
 
 export function WorkitemDetailExtra({
   data,
@@ -32,6 +35,7 @@ export function WorkitemDetailExtra({
 }: DetailExtraProps) {
   const { t } = useI18n();
   const call = useRpc(callToolRpc);
+  const settings = useSettings(autowonderSettings);
   const toast = useToast();
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -42,6 +46,14 @@ export function WorkitemDetailExtra({
   const commentInputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const workitemId = asNumber(data.id);
+  const webUrl =
+    workitemId !== undefined && settings.status === "ready"
+      ? workitemWebUrl(
+          settings.values.mcpUrl,
+          workitemId,
+          settings.values.webBaseUrl,
+        )
+      : null;
 
   const agentsQuery = useQuery({
     queryKey: ["aw", workspaceId, "agentsForAssign"],
@@ -159,6 +171,21 @@ export function WorkitemDetailExtra({
 
   return (
     <View style={{ gap: 10 }}>
+      {webUrl ? (
+        <Row gap={7}>
+          <Button
+            label={t("在 AutoWonder 打开")}
+            theme={theme}
+            compact
+            icon="ExternalLink"
+            onPress={() => {
+              void openExternalUrl(webUrl).catch(() => {
+                toast.error(t("打开失败"));
+              });
+            }}
+          />
+        </Row>
+      ) : null}
       <WorkitemDocuments
         workspaceId={workspaceId}
         workitemId={workitemId}

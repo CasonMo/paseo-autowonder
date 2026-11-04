@@ -4,7 +4,7 @@ AutoWonder Workbench brings AutoWonder into Paseo. It covers workitems, digital 
 
 ## Setup
 
-Add the AutoWonder MCP URL in the plugin settings. The URL normally contains a personal access token, so it is stored only in the daemon's plugin settings. An optional polling interval controls background workitem change checks; set it to 0 to disable polling.
+Add the AutoWonder MCP URL in the plugin settings. The URL normally contains a personal access token, so it is stored only in the daemon's plugin settings. The Open in AutoWonder action derives the web URL from the MCP URL; for internal or standalone deployments, set the optional web root such as `http://autowonder.example.com:7001`. An optional polling interval controls background workitem change checks; set it to 0 to disable polling.
 
 The interface is available in English and Simplified Chinese. It follows the Paseo app language by default; the language can also be set explicitly in the plugin settings.
 
@@ -13,7 +13,7 @@ The risk radar is enabled by default and can be turned off in settings. Document
 ## Capabilities
 
 - Workitem board with personal scopes, type filters, search, per-status loading, a risk radar for stalled, pending-decision, failed, scheduled-not-started, and stale workitems, and fixed-height status columns.
-- Workitem detail with status transitions, assignment, comments, editing, pause/resume, delivery recovery, delivery control, and document download, listing, and deletion.
+- Workitem detail with status transitions, assignment, comments, editing, pause/resume, delivery recovery, delivery control, opening the workitem in AutoWonder, and document download, listing, and deletion.
 - Notification center for workitems you participate in, with persistent unread/read state. It stores these change summaries locally so unread notifications survive plugin or daemon restarts.
 - Execution monitoring with status totals, active and long-running dispatch detection, status filters, search, optional 30-second auto-refresh, and links to activities, traces, diagnostics, pause, and delivery recovery.
 - Digital worker, SDLC, squad, repository/Repo Map, skill and category, scheduled task, executor, memory, and execution-record management.

@@ -73,6 +73,7 @@ export function SettingsPanel({
   const toast = useToast();
   const { t } = useI18n();
   const [url, setUrl] = useState("");
+  const [webBaseUrl, setWebBaseUrl] = useState("");
   const [pollSeconds, setPollSeconds] = useState("60");
   const [riskRadarEnabled, setRiskRadarEnabled] = useState(true);
   const [documentCliConsent, setDocumentCliConsent] = useState(false);
@@ -82,6 +83,7 @@ export function SettingsPanel({
   const [saving, setSaving] = useState(false);
   const [testState, setTestState] = useState<TestState | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [webError, setWebError] = useState<string | null>(null);
   const [pollError, setPollError] = useState<string | null>(null);
   const [syncedRevision, setSyncedRevision] = useState<string | null>(null);
 
@@ -90,10 +92,12 @@ export function SettingsPanel({
   useEffect(() => {
     if (!ready || ready.revision === syncedRevision) return;
     setUrl(ready.values.mcpUrl);
+    setWebBaseUrl(ready.values.webBaseUrl);
     setPollSeconds(String(ready.values.pollIntervalSeconds));
     setRiskRadarEnabled(ready.values.riskRadarEnabled);
     setDocumentCliConsent(ready.values.documentCliConsent);
     setUiLocale(preferenceFromSettings(ready.values));
+    setWebError(null);
     setPollError(null);
     setSyncedRevision(ready.revision);
   }, [ready, syncedRevision]);
@@ -144,12 +148,34 @@ export function SettingsPanel({
     return null;
   }
 
+  function validateWebBaseUrl(value: string): string | null {
+    if (!value) return null;
+    try {
+      const parsed = new URL(value);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return t("网页地址仅支持 http 或 https");
+      }
+      if (parsed.search || parsed.hash) {
+        return t("网页地址不能包含查询参数或锚点");
+      }
+    } catch {
+      return t("网页地址格式不正确");
+    }
+    return null;
+  }
+
   async function save() {
     if (!ready) return;
     const nextUrl = url.trim();
+    const nextWebBaseUrl = webBaseUrl.trim();
     const validation = validate(nextUrl);
     if (validation) {
       setLocalError(validation);
+      return;
+    }
+    const webValidation = validateWebBaseUrl(nextWebBaseUrl);
+    if (webValidation) {
+      setWebError(webValidation);
       return;
     }
     const interval = Number(pollSeconds.trim());
@@ -164,11 +190,13 @@ export function SettingsPanel({
     }
     setPollError(null);
     setLocalError(null);
+    setWebError(null);
     setSaving(true);
     try {
       const ok = await settings.save(
         {
           mcpUrl: nextUrl,
+          webBaseUrl: nextWebBaseUrl,
           pollIntervalSeconds: interval,
           riskRadarEnabled,
           documentCliConsent,
@@ -183,6 +211,7 @@ export function SettingsPanel({
       toast.show(t("AutoWonder 设置已保存"), { variant: "success" });
       onSaved?.({
         mcpUrl: nextUrl,
+        webBaseUrl: nextWebBaseUrl,
         pollIntervalSeconds: interval,
         riskRadarEnabled,
         documentCliConsent,
@@ -222,7 +251,7 @@ export function SettingsPanel({
       {showHeader ? (
         <SectionHeader
           title="AutoWonder 连接"
-          subtitle="配置 MCP 连接、工单轮询、风险雷达和文档 CLI 授权。"
+          subtitle="配置 MCP 连接、网页地址、工单轮询、风险雷达和文档 CLI 授权。"
           theme={theme}
         />
       ) : null}
@@ -268,6 +297,25 @@ export function SettingsPanel({
         </LabeledField>
 
         {testState ? <Text style={resultStyle}>{testState.message}</Text> : null}
+      </Card>
+
+      <Card theme={theme}>
+        <LabeledField
+          label="AutoWonder 网页地址（可选）"
+          error={webError}
+          hint="用于工单详情的“在 AutoWonder 打开”按钮。留空时从 MCP URL 自动推导；内网或独立部署可填写网页根地址，例如 http://autowonder.example.com:7001。"
+          theme={theme}
+        >
+          <Input
+            value={webBaseUrl}
+            onChangeText={(value) => {
+              setWebBaseUrl(value);
+              setWebError(null);
+            }}
+            placeholder="http://autowonder.example.com:7001"
+            theme={theme}
+          />
+        </LabeledField>
       </Card>
 
       <Divider theme={theme} />
@@ -372,7 +420,7 @@ export function SettingsPanel({
             onPress={() => void save()}
           />
           <Text style={{ ...textStyle(theme, 11, true), flexShrink: 1 }}>
-            保存 MCP URL、轮询间隔、风险雷达和 CLI 授权。
+            保存 MCP URL、网页地址、轮询间隔、风险雷达和 CLI 授权。
           </Text>
         </View>
         {settings.saving ? <Text style={textStyle(theme, 12, true)}>正在写入配置…</Text> : null}

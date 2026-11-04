@@ -294,3 +294,36 @@ export function withAssigneeLabel(
     : asString(item.assigneeDisplayName) || "未指派";
   return { ...item, assigneeLabel };
 }
+
+/** Build the AutoWonder web URL for a workitem from its MCP endpoint or configured web base. */
+export function workitemWebUrl(
+  mcpUrl: string,
+  workitemId: number,
+  webBaseUrl = "",
+): string | null {
+  const base = webBaseUrl.trim();
+  if (base) {
+    try {
+      const parsed = new URL(base);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+      const path = parsed.pathname.replace(/\/$/, "");
+      const workitemsIndex = path.match(/\/workitems(?:\/|$)/)?.index ?? -1;
+      const basePath =
+        workitemsIndex >= 0 ? path.slice(0, workitemsIndex) : path;
+      return `${parsed.origin}${basePath}/workitems/${workitemId}`;
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const parsed = new URL(mcpUrl);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+    const match = parsed.pathname.match(/^(.*?)\/api\/mcp(?:\/.*)?$/);
+    const prefix = (match?.[1] ?? "")
+      .replace(/\/$/, "")
+      .replace(/^\/app(?=\/|$)/, "");
+    return `${parsed.origin}${prefix}/workitems/${workitemId}`;
+  } catch {
+    return null;
+  }
+}

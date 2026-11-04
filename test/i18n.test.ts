@@ -13,3 +13,11 @@ test("translates interpolated UI labels", () => {
     "3 loaded",
   );
 });
+
+test("translates web URL settings and workitem links", () => {
+  assert.equal(
+    translateText("en", "AutoWonder 网页地址（可选）"),
+    "AutoWonder web URL (optional)",
+  );
+  assert.equal(translateText("en", "打开失败"), "Could not open");
+});
