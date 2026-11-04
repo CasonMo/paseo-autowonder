@@ -10,11 +10,13 @@ import {
   autowonderSettings,
   callToolRpc,
   downloadWorkitemDocumentRpc,
+  previewWorkitemDocumentRpc,
 } from "../shared/contracts";
 import {
   Button,
   Card,
   Loading,
+  MarkdownBlock,
   Row,
   textStyle,
 } from "./components";
@@ -33,7 +35,13 @@ interface DownloadedDocument {
   size?: number;
 }
 
-type PendingAction = { fileName?: string };
+interface PreviewState {
+  name: string;
+  content: string;
+  truncated?: boolean;
+}
+
+type PendingAction = { fileName?: string; mode: "download" | "preview" };
 
 function formatSize(value: unknown): string {
   const bytes = asNumber(value);
@@ -59,12 +67,14 @@ export function WorkitemDocuments({
   const { t } = useI18n();
   const call = useRpc(callToolRpc);
   const download = useRpc(downloadWorkitemDocumentRpc);
+  const preview = useRpc(previewWorkitemDocumentRpc);
   const settings = useSettings(autowonderSettings);
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [consentOpen, setConsentOpen] = useState(false);
   const [downloaded, setDownloaded] = useState<DownloadedDocument[]>([]);
+  const [previewState, setPreviewState] = useState<PreviewState | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const documentsQuery = useQuery({
@@ -88,7 +98,7 @@ export function WorkitemDocuments({
     try {
       const response = await download({ workspaceId, workitemId, fileName });
       if (response.needsConsent && !allowConsent) {
-        setPending({ fileName });
+        setPending({ fileName, mode: "download" });
         setConsentOpen(true);
         return;
       }
@@ -112,11 +122,45 @@ export function WorkitemDocuments({
 
   function requestDownload(fileName?: string) {
     if (!consented) {
-      setPending({ fileName });
+      setPending({ fileName, mode: "download" });
       setConsentOpen(true);
       return;
     }
     void runDownload(fileName);
+  }
+
+  async function runPreview(fileName: string, allowConsent = false) {
+    setBusy("preview");
+    try {
+      const response = await preview({ workspaceId, workitemId, fileName });
+      if (response.needsConsent && !allowConsent) {
+        setPending({ fileName, mode: "preview" });
+        setConsentOpen(true);
+        return;
+      }
+      if (!response.ok) {
+        toast.error(response.error ?? t("文档预览失败。"));
+        return;
+      }
+      setPreviewState({
+        name: response.name ?? fileName,
+        content: response.content ?? "",
+        truncated: response.truncated,
+      });
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function requestPreview(fileName: string) {
+    if (!consented) {
+      setPending({ fileName, mode: "preview" });
+      setConsentOpen(true);
+      return;
+    }
+    void runPreview(fileName);
   }
 
   async function confirmConsent() {
@@ -136,7 +180,11 @@ export function WorkitemDocuments({
     setConsentOpen(false);
     setPending(null);
     if (action) {
-      await runDownload(action.fileName, true);
+      if (action.mode === "preview" && action.fileName) {
+        await runPreview(action.fileName, true);
+      } else {
+        await runDownload(action.fileName, true);
+      }
     }
   }
 
@@ -203,9 +251,9 @@ export function WorkitemDocuments({
         ) : null}
         {documents.map((document) => {
           const artifactId = asNumber(document.id);
+          const fileName = asString(document.name);
           const name =
-            asString(document.name) ||
-            t("文档 #{{id}}", { id: artifactId ?? "—" });
+            fileName || t("文档 #{{id}}", { id: artifactId ?? "—" });
           const meta = [
             asString(document.type) || t("文档"),
             formatSize(document.size),
@@ -238,14 +286,25 @@ export function WorkitemDocuments({
                 <Text numberOfLines={1} style={{ ...textStyle(theme, 10, true), flexShrink: 1 }}>
                   {meta}
                 </Text>
+                {fileName ? (
+                  <Button
+                    label={busy === "preview" ? t("加载中…") : t("预览")}
+                    theme={theme}
+                    compact
+                    iconOnly
+                    icon="Eye"
+                    disabled={busy !== null}
+                    onPress={() => requestPreview(fileName)}
+                  />
+                ) : null}
                 <Button
                   label={busy === "download" ? "下载中…" : "下载"}
                   theme={theme}
                   compact
                   iconOnly
                   icon="Download"
-                  disabled={busy !== null}
-                  onPress={() => requestDownload(name)}
+                  disabled={busy !== null || !fileName}
+                  onPress={() => requestDownload(fileName)}
                 />
                 <Button
                   label={
@@ -296,6 +355,37 @@ export function WorkitemDocuments({
           </View>
         ) : null}
       </Card>
+
+      {previewState ? (
+        <Modal
+          title={previewState.name}
+          open
+          onOpenChange={(next) => {
+            if (!next) setPreviewState(null);
+          }}
+        >
+          <Modal.Content>
+            <Card theme={theme}>
+              {previewState.truncated ? (
+                <Text style={textStyle(theme, 11, true)}>
+                  {t("预览内容过大，仅显示前 {{count}} 个字符。", {
+                    count: previewState.content.length,
+                  })}
+                </Text>
+              ) : null}
+              {previewState.content.trim() ? (
+                <MarkdownBlock
+                  text={previewState.content}
+                  theme={theme}
+                  maxHeight={compact ? 360 : 560}
+                />
+              ) : (
+                <Text style={textStyle(theme, 12, true)}>{t("文档内容为空。")}</Text>
+              )}
+            </Card>
+          </Modal.Content>
+        </Modal>
+      ) : null}
 
       {consentOpen ? (
         <Modal

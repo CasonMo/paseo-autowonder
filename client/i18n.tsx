@@ -609,6 +609,13 @@ const en: Record<string, string> = {
   "在线 / 总数": "online / total",
   "启用 / 总数": "enabled / total",
   "活跃 / 前 100 条": "active / first 100",
+  "预览": "Preview",
+  "文档预览失败。": "Failed to preview document.",
+  "文档过大，暂不支持预览，请下载后查看。": "This document is too large to preview. Download it to view.",
+  "该文档不是可预览的文本文件，请下载后查看。": "This document is not a text file that can be previewed. Download it to view.",
+  "读取文档内容失败。": "Failed to read document content.",
+  "预览内容过大，仅显示前 {{count}} 个字符。": "Preview truncated to the first {{count}} characters.",
+  "文档内容为空。": "The document is empty.",
 };
 
 function interpolate(

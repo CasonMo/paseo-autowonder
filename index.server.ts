@@ -8,12 +8,16 @@ import {
   downloadWorkitemDocumentRpc,
   listToolsRpc,
   pingRpc,
+  previewWorkitemDocumentRpc,
   refreshChangesRpc,
   type AutoWonderSettingsValues,
 } from "./shared/contracts";
 import { callTool, listTools } from "./server/mcp";
 import { ChangeTracker } from "./server/changes";
-import { downloadWorkitemDocument } from "./server/documents";
+import {
+  downloadWorkitemDocument,
+  previewWorkitemDocument,
+} from "./server/documents";
 
 export default function contribute(server: PluginServerContext) {
   const settings = server.registerSettings(autowonderSettings);
@@ -81,6 +85,19 @@ export default function contribute(server: PluginServerContext) {
     async ({ workspaceId, workitemId, fileName }) => {
       const values = await readSettings();
       return downloadWorkitemDocument(
+        await resolveUrl(),
+        workspaceId,
+        workitemId,
+        fileName,
+        values.documentCliConsent,
+      );
+    },
+  );
+  server.handle(
+    previewWorkitemDocumentRpc,
+    async ({ workspaceId, workitemId, fileName }) => {
+      const values = await readSettings();
+      return previewWorkitemDocument(
         await resolveUrl(),
         workspaceId,
         workitemId,

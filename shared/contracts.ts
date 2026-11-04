@@ -184,3 +184,20 @@ export const downloadWorkitemDocumentRpc = defineRpc({
     needsConsent: z.boolean().optional(),
   }),
 });
+
+export const previewWorkitemDocumentRpc = defineRpc({
+  name: "autowonder.preview_workitem_document",
+  input: z.object({
+    workspaceId: z.number().int(),
+    workitemId: z.number().int(),
+    fileName: z.string().min(1),
+  }),
+  output: z.object({
+    ok: z.boolean(),
+    name: z.string().optional(),
+    content: z.string().optional(),
+    truncated: z.boolean().optional(),
+    error: z.string().optional(),
+    needsConsent: z.boolean().optional(),
+  }),
+});

@@ -27,6 +27,18 @@ export interface DownloadResult {
   needsConsent?: boolean;
 }
 
+export interface PreviewResult {
+  ok: boolean;
+  name?: string;
+  content?: string;
+  truncated?: boolean;
+  error?: string;
+  needsConsent?: boolean;
+}
+
+const PREVIEW_MAX_BYTES = 512 * 1024;
+const PREVIEW_MAX_CHARS = 200_000;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -137,6 +149,53 @@ function walkFiles(directory: string): DownloadedDocument[] {
   return result;
 }
 
+function isProbablyText(buffer: Buffer): boolean {
+  if (buffer.includes(0)) return false;
+  let control = 0;
+  for (const byte of buffer) {
+    if (byte < 9 || (byte > 13 && byte < 32)) control += 1;
+  }
+  return buffer.length === 0 || control / buffer.length < 0.02;
+}
+
+export function readPreviewText(
+  outputDir: string,
+  file: DownloadedDocument,
+): PreviewResult {
+  try {
+    const outputRoot = fs.realpathSync(outputDir);
+    const realPath = fs.realpathSync(file.path);
+    const relative = path.relative(outputRoot, realPath);
+    if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) {
+      return { ok: false, error: "文档名称不合法。" };
+    }
+    const stat = fs.statSync(realPath);
+    if (stat.size > PREVIEW_MAX_BYTES) {
+      return {
+        ok: false,
+        error: "文档过大，暂不支持预览，请下载后查看。",
+      };
+    }
+    const buffer = fs.readFileSync(realPath);
+    if (!isProbablyText(buffer)) {
+      return {
+        ok: false,
+        error: "该文档不是可预览的文本文件，请下载后查看。",
+      };
+    }
+    const text = buffer.toString("utf8");
+    const truncated = text.length > PREVIEW_MAX_CHARS;
+    return {
+      ok: true,
+      name: file.name,
+      content: truncated ? text.slice(0, PREVIEW_MAX_CHARS) : text,
+      truncated,
+    };
+  } catch {
+    return { ok: false, error: "读取文档内容失败。" };
+  }
+}
+
 export async function downloadWorkitemDocument(
   url: string,
   workspaceId: number,
@@ -224,4 +283,53 @@ export async function downloadWorkitemDocument(
       error: errorText(error, token ? [token.token] : []),
     };
   }
+}
+
+export async function previewWorkitemDocument(
+  url: string,
+  workspaceId: number,
+  workitemId: number,
+  fileName: string,
+  consented: boolean,
+): Promise<PreviewResult> {
+  if (!consented) {
+    return {
+      ok: false,
+      needsConsent: true,
+      error: "下载文档需要先允许插件通过 npx 下载并运行 AutoWonder CLI。",
+    };
+  }
+  const trimmedName = fileName.trim();
+  if (
+    !trimmedName ||
+    trimmedName.includes("..") ||
+    trimmedName.startsWith("/") ||
+    trimmedName.startsWith("\\")
+  ) {
+    return { ok: false, error: "文档名称不合法。" };
+  }
+  const downloaded = await downloadWorkitemDocument(
+    url,
+    workspaceId,
+    workitemId,
+    trimmedName,
+    true,
+  );
+  if (!downloaded.ok || !downloaded.outputDir) {
+    return {
+      ok: false,
+      error: downloaded.error || "文档预览失败。",
+      needsConsent: downloaded.needsConsent,
+    };
+  }
+  const file =
+    downloaded.downloaded.find(
+      (item) =>
+        item.name === trimmedName ||
+        path.basename(item.name) === path.basename(trimmedName),
+    ) ?? downloaded.downloaded[0];
+  if (!file) {
+    return { ok: false, error: "下载完成，但没有返回文件。" };
+  }
+  return readPreviewText(downloaded.outputDir, file);
 }
