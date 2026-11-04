@@ -275,9 +275,9 @@ export function SettingsPanel({
       <View style={{ gap: 8 }}>
         <Text style={textStyle(theme, 13)}>工单变化通知</Text>
         <Text style={{ ...textStyle(theme, 12, true), lineHeight: 19 }}>
-          daemon 会按间隔并发读取所有可访问工作区每个状态最多 100 条工单，发现新增、状态、
-          指派或内容变化后，在左上角 AutoWonder 菜单右侧显示提示。更早的工单不在变化检查范围内，
-          轮询只读，不会修改数据。
+          {t(
+            "daemon 只读取我参与的工单（每个状态最多 100 条），发现新增、状态、指派或内容变化后，在左上角 AutoWonder 菜单右侧显示提示。更早的工单不在变化检查范围内，轮询只读，不会修改数据。",
+          )}
         </Text>
       </View>
 
@@ -285,7 +285,7 @@ export function SettingsPanel({
         <LabeledField
           label="轮询间隔（秒）"
           error={pollError}
-          hint="0 表示关闭，最低 15 秒；建议 30-300 秒。每轮并发检查 5 个状态，每个状态最多 100 条，间隔越短 MCP 压力越大。默认 60 秒。"
+          hint="0 表示关闭，最低 15 秒；建议 30-300 秒。每轮并发检查我参与的 5 个状态，每个状态最多 100 条，间隔越短 MCP 压力越大。默认 60 秒。"
           theme={theme}
         >
           <Input

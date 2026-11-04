@@ -4,7 +4,8 @@ import { homedir } from "node:os";
 import path from "node:path";
 import type { WorkitemChange } from "../shared/contracts";
 
-const STORE_VERSION = 1;
+// Bump when notification semantics change so old, out-of-scope history is ignored.
+const STORE_VERSION = 2;
 const CHANGE_KINDS = new Set<WorkitemChange["changes"][number]>([
   "new",
   "status",

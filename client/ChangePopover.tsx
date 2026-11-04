@@ -135,7 +135,7 @@ function ChangePopoverContent({
     <View style={{ gap: 10, width: layout.compact ? undefined : 330, minWidth: 270 }}>
       <Row gap={8}>
         <Text style={{ color: theme.colors.foreground, fontSize: 14, fontWeight: "600", flex: 1 }}>
-          工单变化
+          我参与的工单变化
         </Text>
         <Button
           label="刷新"
@@ -190,7 +190,7 @@ function ChangePopoverContent({
           </Row>
           <Text style={textStyle(theme, 10, true)}>
             {data.intervalSeconds > 0
-              ? t("每 {{interval}} 秒检查一次 · 每个状态最多 {{limit}} 条", {
+              ? t("每 {{interval}} 秒检查一次 · 我参与的每个状态最多 {{limit}} 条", {
                   interval: data.intervalSeconds,
                   limit: WORKITEMS_PER_STATUS,
                 })

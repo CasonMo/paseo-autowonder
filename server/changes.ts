@@ -297,6 +297,7 @@ export class ChangeTracker {
             this.fetchTool(this.url, "autowonder.list_workitems", {
               workspaceId: project.id,
               statusCategory,
+              mineScope: "COMMENTED",
               size: WORKITEMS_PER_STATUS,
             }),
           ),

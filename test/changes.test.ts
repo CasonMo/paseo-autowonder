@@ -40,6 +40,7 @@ function fetcher<T extends { statusCategory: string }>(read: () => T[]): ToolFet
       return { items: [{ id: 1, name: "示例工作区" }] };
     }
     if (name === "autowonder.list_workitems") {
+      assert.equal(args.mineScope, "COMMENTED");
       const category = String(args.statusCategory ?? "");
       return { items: read().filter((entry) => entry.statusCategory === category) };
     }

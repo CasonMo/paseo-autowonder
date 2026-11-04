@@ -93,7 +93,7 @@ export function NotificationCenter({
     <View style={{ gap: 14 }}>
       <SectionHeader
         title="通知中心"
-        subtitle={t("{{count}} 条未读 · 最近 {{history}} 条变化", {
+        subtitle={t("{{count}} 条未读 · 最近 {{history}} 条我参与的变化", {
           count: unreadCount,
           history: history.length,
         })}
@@ -124,7 +124,7 @@ export function NotificationCenter({
       {!changes.isLoading && !changes.error && history.length === 0 ? (
         <Empty
           title="暂无通知"
-          hint="工单新增、状态、指派或内容发生变化后，会出现在这里。"
+          hint="我参与的工单新增、状态、指派或内容发生变化后，会出现在这里。"
           theme={theme}
         />
       ) : null}
