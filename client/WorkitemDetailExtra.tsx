@@ -358,11 +358,7 @@ export function WorkitemDetailExtra({
                 </Text>
               </View>
               <View style={{ paddingLeft: 32 }}>
-                <MarkdownBlock
-                  text={asString(entry.contentMd) || "—"}
-                  theme={theme}
-                  maxHeight={compact ? 180 : 260}
-                />
+                <MarkdownBlock text={asString(entry.contentMd) || "—"} theme={theme} />
               </View>
             </View>
           );

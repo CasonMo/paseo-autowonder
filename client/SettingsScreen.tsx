@@ -260,6 +260,7 @@ export function SettingsPanel({
         <LabeledField
           label="MCP URL"
           required
+          hintIcon
           error={localError}
           hint="从 AutoWonder 的 MCP 接入页复制完整地址。地址里通常包含个人访问 token，请勿分享给他人；它只保存在这台 daemon 的插件配置中。"
           theme={theme}
@@ -302,6 +303,7 @@ export function SettingsPanel({
       <Card theme={theme}>
         <LabeledField
           label="AutoWonder 网页地址（可选）"
+          hintIcon
           error={webError}
           hint="用于工单详情的“在 AutoWonder 打开”按钮。留空时从 MCP URL 自动推导；内网或独立部署可填写网页根地址，例如 http://autowonder.example.com:7001。"
           theme={theme}
@@ -332,6 +334,7 @@ export function SettingsPanel({
       <Card theme={theme}>
         <LabeledField
           label="轮询间隔（秒）"
+          hintIcon
           error={pollError}
           hint="0 表示关闭，最低 15 秒；建议 30-300 秒。每轮并发检查我参与的 5 个状态，每个状态最多 100 条，间隔越短 MCP 压力越大。默认 60 秒。"
           theme={theme}

@@ -1,12 +1,12 @@
 import type { PluginScreenProps } from "@getpaseo/plugin/client";
 import { useRpc, useSettings } from "@getpaseo/plugin/client";
-import { Modal } from "@getpaseo/plugin/client/react-native";
 import { Icon } from "@getpaseo/plugin/client/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
+import { WideModal } from "./WideModal";
 import {
   autowonderSettings,
   callToolRpc,
@@ -749,24 +749,22 @@ export function BoardScreen({ theme, layout, params }: PluginScreenProps) {
         </View>
       ) : null}
 
-      <Modal
+      <WideModal
         title={t("AutoWonder 设置")}
         open={settingsOpen}
-        onOpenChange={(next) => {
-          if (!next) setSettingsOpen(false);
-        }}
+        onClose={() => setSettingsOpen(false)}
+        theme={theme}
+        maxWidth={760}
       >
-        <Modal.Content>
-          <SettingsPanel
-            theme={theme}
-            compact={compact}
-            showHeader={false}
-            onSaved={() => {
-              refreshAll();
-            }}
-          />
-        </Modal.Content>
-      </Modal>
+        <SettingsPanel
+          theme={theme}
+          compact={compact}
+          showHeader={false}
+          onSaved={() => {
+            refreshAll();
+          }}
+        />
+      </WideModal>
 
       {detail && workspaceId !== null ? (
         <View

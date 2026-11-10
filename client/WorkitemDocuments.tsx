@@ -6,6 +6,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
+import { WideModal } from "./WideModal";
 import {
   autowonderSettings,
   callToolRpc,
@@ -357,34 +358,32 @@ export function WorkitemDocuments({
       </Card>
 
       {previewState ? (
-        <Modal
+        <WideModal
           title={previewState.name}
           open
-          onOpenChange={(next) => {
-            if (!next) setPreviewState(null);
-          }}
+          onClose={() => setPreviewState(null)}
+          theme={theme}
+          maxWidth={860}
         >
-          <Modal.Content>
-            <Card theme={theme}>
-              {previewState.truncated ? (
-                <Text style={textStyle(theme, 11, true)}>
-                  {t("预览内容过大，仅显示前 {{count}} 个字符。", {
-                    count: previewState.content.length,
-                  })}
-                </Text>
-              ) : null}
-              {previewState.content.trim() ? (
-                <MarkdownBlock
-                  text={previewState.content}
-                  theme={theme}
-                  maxHeight={compact ? 360 : 560}
-                />
-              ) : (
-                <Text style={textStyle(theme, 12, true)}>{t("文档内容为空。")}</Text>
-              )}
-            </Card>
-          </Modal.Content>
-        </Modal>
+          <Card theme={theme}>
+            {previewState.truncated ? (
+              <Text style={textStyle(theme, 11, true)}>
+                {t("预览内容过大，仅显示前 {{count}} 个字符。", {
+                  count: previewState.content.length,
+                })}
+              </Text>
+            ) : null}
+            {previewState.content.trim() ? (
+              <MarkdownBlock
+                text={previewState.content}
+                theme={theme}
+                maxHeight={compact ? 360 : 560}
+              />
+            ) : (
+              <Text style={textStyle(theme, 12, true)}>{t("文档内容为空。")}</Text>
+            )}
+          </Card>
+        </WideModal>
       ) : null}
 
       {consentOpen ? (

@@ -1,5 +1,5 @@
 import { useRpc } from "@getpaseo/plugin/client";
-import { Modal, useToast } from "@getpaseo/plugin/client/react-native";
+import { useToast } from "@getpaseo/plugin/client/react-native";
 import { Icon, ScrollView } from "@getpaseo/plugin/client/ui";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
+import { WideModal } from "./WideModal";
 import { callToolRpc, type ToolDescriptor } from "../shared/contracts";
 import { ToolRunner } from "./ToolRunner";
 import {
@@ -743,15 +744,15 @@ export function EntityDetailModal({
   }
 
   return (
-    <Modal
+    <WideModal
       title={truncate(title, compact ? 48 : 90)}
       open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
+      onClose={onClose}
+      theme={theme}
+      maxWidth={960}
     >
-      <Modal.Content>{body}</Modal.Content>
-    </Modal>
+      {body}
+    </WideModal>
   );
 }
 

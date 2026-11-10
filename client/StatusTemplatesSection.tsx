@@ -1,11 +1,11 @@
 import { useRpc } from "@getpaseo/plugin/client";
-import { Modal } from "@getpaseo/plugin/client/react-native";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
+import { WideModal } from "./WideModal";
 import { callToolRpc } from "../shared/contracts";
 import {
   Badge,
@@ -188,15 +188,14 @@ function StatusTemplateDetail({
   };
 
   return (
-    <Modal
+    <WideModal
       title={asString(data.name) || t("状态模版")}
       open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
+      onClose={onClose}
+      theme={theme}
+      maxWidth={860}
     >
-      <Modal.Content>
-        <View style={{ gap: 14 }}>
+      <View style={{ gap: 14 }}>
           {query.isLoading ? <Loading theme={theme} /> : null}
           {query.error ? <ErrorBox error={query.error} theme={theme} /> : null}
           <Row gap={7}>
@@ -254,8 +253,7 @@ function StatusTemplateDetail({
 
           <JsonBlock value={data} theme={theme} maxHeight={320} title="原始 JSON" />
           <Button label="关闭" theme={theme} onPress={onClose} />
-        </View>
-      </Modal.Content>
-    </Modal>
+      </View>
+    </WideModal>
   );
 }

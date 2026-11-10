@@ -261,6 +261,7 @@ export function LabeledField({
   children,
   theme,
   required = false,
+  hintIcon = false,
 }: {
   label: string;
   hint?: string;
@@ -268,18 +269,51 @@ export function LabeledField({
   children: ReactNode;
   theme: PluginTheme;
   required?: boolean;
+  hintIcon?: boolean;
 }) {
+  const { t } = useI18n();
+  const [hintOpen, setHintOpen] = useState(false);
   return (
     <View style={{ gap: 5 }}>
-      <Text style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "500" }}>
-        {label}
-        {required ? <Text style={{ color: theme.colors.statusDanger }}> *</Text> : null}
-      </Text>
-      {children}
-      {hint ? (
-        <Text style={{ color: theme.colors.foregroundMuted, fontSize: 11, lineHeight: 16 }}>
-          {hint}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+        <Text style={{ color: theme.colors.foreground, fontSize: 13, fontWeight: "500" }}>
+          {label}
+          {required ? <Text style={{ color: theme.colors.statusDanger }}> *</Text> : null}
         </Text>
+        {hint && hintIcon ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("查看字段说明")}
+            accessibilityState={{ expanded: hintOpen }}
+            hitSlop={6}
+            onPointerEnter={() => setHintOpen(true)}
+            onPointerLeave={() => setHintOpen(false)}
+            onPress={() => setHintOpen((value) => !value)}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          >
+            <Icon name="CircleHelp" size={13} color={theme.colors.foregroundMuted} />
+          </Pressable>
+        ) : null}
+      </View>
+      {children}
+      {hint && (!hintIcon || hintOpen) ? (
+        <View
+          style={
+            hintIcon
+              ? {
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  backgroundColor: theme.colors.surface1,
+                  padding: 8,
+                }
+              : undefined
+          }
+        >
+          <Text style={{ color: theme.colors.foregroundMuted, fontSize: 11, lineHeight: 16 }}>
+            {hint}
+          </Text>
+        </View>
       ) : null}
       {error ? (
         <Text style={{ color: theme.colors.statusDanger, fontSize: 11 }}>{error}</Text>
@@ -449,7 +483,7 @@ export function KeyValueRows({
 export function MarkdownBlock({
   text,
   theme,
-  maxHeight = 320,
+  maxHeight,
 }: {
   text: string;
   theme: PluginTheme;
@@ -502,7 +536,106 @@ export function MarkdownBlock({
       blocks.push(<View key={`space-${index}`} style={{ height: 5 }} />);
       continue;
     }
-    const heading = /^(#{1,3})\s+(.*)$/.exec(line);
+    if (
+      isTableRow(line) &&
+      index + 1 < lines.length &&
+      isTableSeparator(lines[index + 1] ?? "")
+    ) {
+      const header = tableCells(line);
+      const rows: string[][] = [];
+      let cursor = index + 2;
+      while (cursor < lines.length) {
+        const next = lines[cursor] ?? "";
+        if (!isTableRow(next) || isTableSeparator(next)) break;
+        rows.push(tableCells(next));
+        cursor += 1;
+      }
+      const widths = tableWidths(header, rows);
+      blocks.push(
+        <ScrollView
+          key={`table-${index}`}
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator
+          style={{ maxWidth: "100%", marginVertical: 4 }}
+        >
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <View style={{ flexDirection: "row", backgroundColor: theme.colors.surface2 }}>
+              {header.map((cell, column) => (
+                <View
+                  key={`head-${column}`}
+                  style={{
+                    width: widths[column] ?? 84,
+                    paddingHorizontal: 8,
+                    paddingVertical: 6,
+                    borderRightWidth: column === header.length - 1 ? 0 : 1,
+                    borderRightColor: theme.colors.border,
+                  }}
+                >
+                  <Text
+                    selectable
+                    translate={false}
+                    style={{
+                      color: theme.colors.foreground,
+                      fontSize: 11,
+                      fontWeight: "600",
+                      lineHeight: 16,
+                    }}
+                  >
+                    {cell ? renderInlineMarkdown(cell, theme) : " "}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            {rows.map((row, rowIndex) => (
+              <View
+                key={`row-${rowIndex}`}
+                style={{
+                  flexDirection: "row",
+                  borderTopWidth: 1,
+                  borderTopColor: theme.colors.border,
+                }}
+              >
+                {widths.map((width, column) => (
+                  <View
+                    key={`cell-${column}`}
+                    style={{
+                      width,
+                      paddingHorizontal: 8,
+                      paddingVertical: 6,
+                      borderRightWidth: column === widths.length - 1 ? 0 : 1,
+                      borderRightColor: theme.colors.border,
+                    }}
+                  >
+                    <Text
+                      selectable
+                      translate={false}
+                      style={{
+                        color: theme.colors.foreground,
+                        fontSize: 11,
+                        lineHeight: 16,
+                      }}
+                    >
+                      {row[column] ? renderInlineMarkdown(row[column] ?? "", theme) : " "}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        </ScrollView>,
+      );
+      index = cursor - 1;
+      continue;
+    }
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
     if (heading) {
       const level = heading[1]?.length ?? 1;
       blocks.push(
@@ -518,7 +651,7 @@ export function MarkdownBlock({
             marginTop: 4,
           }}
         >
-          {cleanInlineMarkdown(heading[2] ?? "")}
+          {renderInlineMarkdown(heading[2] ?? "", theme)}
         </Text>,
       );
       continue;
@@ -536,8 +669,54 @@ export function MarkdownBlock({
             paddingLeft: 10,
           }}
         >
-          • {cleanInlineMarkdown(line.replace(/^\s*([-*])\s+/, ""))}
+          • {renderInlineMarkdown(line.replace(/^\s*([-*])\s+/, ""), theme)}
         </Text>,
+      );
+      continue;
+    }
+    const ordered = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+    if (ordered) {
+      blocks.push(
+        <Text
+          key={`ordered-${index}`}
+          selectable
+          translate={false}
+          style={{
+            color: theme.colors.foreground,
+            fontSize: 13,
+            lineHeight: 20,
+            paddingLeft: 10,
+          }}
+        >
+          {ordered[1]}. {renderInlineMarkdown(ordered[2] ?? "", theme)}
+        </Text>,
+      );
+      continue;
+    }
+    const quote = /^\s*>\s?(.*)$/.exec(line);
+    if (quote) {
+      blocks.push(
+        <View
+          key={`quote-${index}`}
+          style={{
+            borderLeftWidth: 2,
+            borderLeftColor: theme.colors.border,
+            paddingLeft: 8,
+            paddingVertical: 2,
+          }}
+        >
+          <Text
+            selectable
+            translate={false}
+            style={{
+              color: theme.colors.foregroundMuted,
+              fontSize: 12,
+              lineHeight: 18,
+            }}
+          >
+            {renderInlineMarkdown(quote[1] ?? "", theme)}
+          </Text>
+        </View>,
       );
       continue;
     }
@@ -561,23 +740,92 @@ export function MarkdownBlock({
           lineHeight: 20,
         }}
       >
-        {cleanInlineMarkdown(line)}
+        {renderInlineMarkdown(line, theme)}
       </Text>,
     );
   }
   flushCode("code-final");
+  const content = <View style={{ gap: 1 }}>{blocks}</View>;
+  if (maxHeight === undefined) return content;
   return (
     <ScrollView style={{ maxHeight }} nestedScrollEnabled>
-      <View style={{ gap: 1 }}>{blocks}</View>
+      {content}
     </ScrollView>
   );
 }
 
-function cleanInlineMarkdown(value: string): string {
-  return value
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1");
+function renderInlineMarkdown(value: string, theme: PluginTheme): ReactNode[] {
+  const parts = value.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g);
+  return parts.filter((part) => part !== "").map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <Text key={index} style={{ fontWeight: "600" }}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <Text
+          key={index}
+          style={{
+            color: theme.colors.foreground,
+            backgroundColor: theme.colors.surface0,
+            fontFamily: monoFont,
+          }}
+        >
+          {part.slice(1, -1)}
+        </Text>
+      );
+    }
+    const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
+    if (link) {
+      return (
+        <Text key={index} style={{ color: theme.colors.accent }}>
+          {link[1]}
+        </Text>
+      );
+    }
+    return part;
+  });
+}
+
+function tableCells(line: string): string[] {
+  const trimmed = line.trim();
+  const withoutEdges = trimmed
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .replace(/\\\|/g, "\u0000");
+  return withoutEdges
+    .split("|")
+    .map((cell) => cell.trim().replace(/\u0000/g, "|"));
+}
+
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.split("|").length >= 3;
+}
+
+function isTableSeparator(line: string): boolean {
+  const cells = tableCells(line);
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function textDisplayWidth(value: string): number {
+  let width = 0;
+  for (const char of value) {
+    width += /[\u1100-\u11ff\u2e80-\u9fff\uff00-\uffef]/.test(char) ? 2 : 1;
+  }
+  return width;
+}
+
+function tableWidths(header: string[], rows: string[][]): number[] {
+  const columnCount = Math.max(header.length, ...rows.map((row) => row.length));
+  return Array.from({ length: columnCount }, (_, column) => {
+    const values = [header[column] ?? "", ...rows.map((row) => row[column] ?? "")];
+    const maxWidth = Math.max(...values.map(textDisplayWidth));
+    return Math.min(240, Math.max(84, maxWidth * 7 + 18));
+  });
 }
 
 export function JsonBlock({

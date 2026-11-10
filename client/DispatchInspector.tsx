@@ -1,11 +1,11 @@
 import { useRpc } from "@getpaseo/plugin/client";
-import { Modal } from "@getpaseo/plugin/client/react-native";
 import type { PluginTheme } from "@getpaseo/plugin";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
+import { WideModal } from "./WideModal";
 import { callToolRpc } from "../shared/contracts";
 import {
   Badge,
@@ -281,15 +281,14 @@ export function DispatchInspectorModal({
   }
 
   return (
-    <Modal
+    <WideModal
       title={t("派发 #{{id}}", { id: dispatchId })}
       open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
+      onClose={onClose}
+      theme={theme}
+      maxWidth={960}
     >
-      <Modal.Content>
-        <View style={{ gap: 12 }}>
+      <View style={{ gap: 12 }}>
           <Row gap={6} wrap>
             {status ? <Badge label={status} theme={theme} /> : null}
             {workitemId !== undefined ? (
@@ -866,8 +865,7 @@ export function DispatchInspectorModal({
               maxHeight={360}
             />
           ) : null}
-        </View>
-      </Modal.Content>
-    </Modal>
+      </View>
+    </WideModal>
   );
 }
