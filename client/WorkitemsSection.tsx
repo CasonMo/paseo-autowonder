@@ -140,6 +140,94 @@ function columnColor(
   return theme.colors.foregroundMuted;
 }
 
+interface StatusBadgePalette {
+  text: string;
+  background: string;
+}
+
+const STATUS_BADGE_COLORS: Record<"light" | "dark", Record<string, StatusBadgePalette>> = {
+  dark: {
+    NEW: { text: "#cbd5e1", background: "rgba(100, 116, 139, 0.22)" },
+    IN_PROGRESS: { text: "#c4b5fd", background: "rgba(139, 92, 246, 0.24)" },
+    PENDING_DECISION: { text: "#f0abfc", background: "rgba(217, 70, 239, 0.24)" },
+    DONE: { text: "#5eead4", background: "rgba(20, 184, 166, 0.22)" },
+    CANCELED: { text: "#d4d4d8", background: "rgba(113, 113, 122, 0.22)" },
+  },
+  light: {
+    NEW: { text: "#475569", background: "rgba(100, 116, 139, 0.12)" },
+    IN_PROGRESS: { text: "#6d28d9", background: "rgba(139, 92, 246, 0.12)" },
+    PENDING_DECISION: { text: "#a21caf", background: "rgba(217, 70, 239, 0.12)" },
+    DONE: { text: "#0f766e", background: "rgba(20, 184, 166, 0.12)" },
+    CANCELED: { text: "#52525b", background: "rgba(113, 113, 122, 0.12)" },
+  },
+};
+
+function surfaceLuminance(value: string): number | null {
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value.trim());
+  if (hex) {
+    const digits =
+      hex[1].length === 3
+        ? hex[1]
+            .split("")
+            .map((char) => char + char)
+            .join("")
+        : hex[1];
+    const r = parseInt(digits.slice(0, 2), 16);
+    const g = parseInt(digits.slice(2, 4), 16);
+    const b = parseInt(digits.slice(4, 6), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000;
+  }
+  const rgb = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(value.trim());
+  if (rgb) {
+    return (Number(rgb[1]) * 299 + Number(rgb[2]) * 587 + Number(rgb[3]) * 114) / 1000;
+  }
+  return null;
+}
+
+function isDarkSurface(theme: PluginTheme): boolean {
+  const luminance = surfaceLuminance(theme.colors.surface0);
+  return luminance === null || luminance < 128;
+}
+
+function statusBadgeColors(category: string, theme: PluginTheme): StatusBadgePalette {
+  const palette = STATUS_BADGE_COLORS[isDarkSurface(theme) ? "dark" : "light"];
+  return (
+    palette[category] ?? {
+      text: theme.colors.foregroundMuted,
+      background: theme.colors.surface2,
+    }
+  );
+}
+
+function StatusBadge({
+  label,
+  category,
+  theme,
+}: {
+  label: string;
+  category: string;
+  theme: PluginTheme;
+}) {
+  const colors = statusBadgeColors(category, theme);
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 999,
+        backgroundColor: colors.background,
+        alignSelf: "flex-start",
+      }}
+    >
+      <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: colors.text }} />
+      <Text style={{ color: colors.text, fontSize: 11 }}>{label}</Text>
+    </View>
+  );
+}
+
 function isNewerItem(
   next: Record<string, unknown>,
   previous: Record<string, unknown>,
@@ -541,6 +629,7 @@ export function WorkitemsSection({
                     const id = asNumber(item.id);
                     const type = asString(item.workType);
                     const priority = priorityLabel(item.priority);
+                    const statusName = asString(item.statusName);
                     const assignee = asString(item.assigneeLabel) || t("未指派");
                     const assigneeInitial = assignee.replace(/[（(].*$/, "").trim().slice(0, 1) || "?";
                     return (
@@ -567,6 +656,13 @@ export function WorkitemsSection({
                           />
                           {priority ? (
                             <Badge label={priority} theme={theme} tone={priorityTone(item.priority)} />
+                          ) : null}
+                          {statusName ? (
+                            <StatusBadge
+                              label={statusName}
+                              category={asString(item.statusCategory)}
+                              theme={theme}
+                            />
                           ) : null}
                           <Text
                             translate={false}
@@ -674,6 +770,13 @@ export function WorkitemsSection({
                     >
                       {asString(item.title)}
                     </Text>
+                    {asString(item.statusName) ? (
+                      <StatusBadge
+                        label={asString(item.statusName)}
+                        category="CANCELED"
+                        theme={theme}
+                      />
+                    ) : null}
                   </Pressable>
                 ))}
                 </ScrollView>

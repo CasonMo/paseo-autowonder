@@ -12,7 +12,7 @@ The risk radar is enabled by default and can be turned off in settings. Document
 
 ## Capabilities
 
-- Workitem board with personal scopes, type filters, search, per-status loading, a risk radar for stalled, pending-decision, failed, scheduled-not-started, and stale workitems, and fixed-height status columns.
+- Workitem board with personal scopes, type filters, search, per-status loading, status-node badges on every card, a risk radar for stalled, pending-decision, failed, scheduled-not-started, and stale workitems, and fixed-height status columns.
 - Workitem detail with status transitions, assignment, comments, editing, pause/resume, delivery recovery, delivery control, opening the workitem in AutoWonder, and document preview, download, listing, and deletion.
 - Notification center for workitems you participate in, with persistent unread/read state. It stores these change summaries locally so unread notifications survive plugin or daemon restarts.
 - Execution monitoring with status totals, active and long-running dispatch detection, status filters, search, optional 30-second auto-refresh, and links to activities, traces, diagnostics, pause, and delivery recovery.
