@@ -767,6 +767,9 @@ const en: Record<string, string> = {
   "版本可比较": "Versions comparable",
   "展开执行记录（{{count}}）": "Show execution records ({{count}})",
   "收起执行记录": "Hide execution records",
+  "排队中": "Queued",
+  "打包中": "Packaging",
+  "等待中": "Waiting",
 };
 
 function interpolate(

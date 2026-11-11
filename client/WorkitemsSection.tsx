@@ -30,6 +30,7 @@ import { ToolRunner } from "./ToolRunner";
 import {
   asNumber,
   asString,
+  displayStatus,
   listItems,
   priorityLabel,
   statusCategoryLabel,
@@ -118,6 +119,19 @@ function priorityTone(value: unknown): "danger" | "warning" | "muted" | "accent"
   if (priority === 2) return "warning";
   if (priority === 3) return "accent";
   return "muted";
+}
+
+function executionTone(
+  status: string,
+): "success" | "warning" | "danger" | "accent" | "muted" {
+  if (["QUEUED", "PENDING", "WAITING"].includes(status)) return "warning";
+  if (["RUNNING", "PACKAGING", "DISPATCHED", "ACKED"].includes(status)) return "accent";
+  if (["FAILED", "ERROR"].includes(status)) return "danger";
+  return "muted";
+}
+
+function showExecutionStatus(status: string): boolean {
+  return status !== "" && status !== "SUCCEEDED" && status !== "CANCELED";
 }
 
 function sourceLabel(item: Record<string, unknown>): string {
@@ -629,6 +643,7 @@ export function WorkitemsSection({
                     const type = asString(item.workType);
                     const priority = priorityLabel(item.priority);
                     const statusName = asString(item.statusName);
+                    const executionStatus = asString(item.executionStatus);
                     const creator =
                       asString(item.creatorName) ||
                       asString(item.creatorDisplayName) ||
@@ -667,6 +682,13 @@ export function WorkitemsSection({
                               label={statusName}
                               category={asString(item.statusCategory)}
                               theme={theme}
+                            />
+                          ) : null}
+                          {showExecutionStatus(executionStatus) ? (
+                            <Badge
+                              label={displayStatus(executionStatus)}
+                              theme={theme}
+                              tone={executionTone(executionStatus)}
                             />
                           ) : null}
                           <Text
