@@ -12,12 +12,19 @@ The risk radar is enabled by default and can be turned off in settings. Document
 
 ## Capabilities
 
-- Workitem board with personal scopes, type filters, search, per-status loading, status-node badges on every card, a risk radar for stalled, pending-decision, failed, scheduled-not-started, and stale workitems, and fixed-height status columns.
+- Workitem board with personal scopes, type filters, search, per-status loading, status-node badges plus creator and current assignee on every card, a risk radar for stalled, pending-decision, failed, scheduled-not-started, and stale workitems, and fixed-height status columns.
 - Workitem detail with status transitions, assignment, Markdown comments (tables, headings, lists, and code blocks, with content-sized comment height), editing, pause/resume, delivery recovery, delivery control, opening the workitem in AutoWonder, and document preview, download, listing, and deletion.
+- Workitem delivery: health, transition warnings, tags, source, and a delivery recovery panel with executions, retries, errors, restarts, pause, retry, cancel, close, and reopen actions.
 - Notification center for workitems you participate in, with persistent unread/read state. It stores these change summaries locally so unread notifications survive plugin or daemon restarts.
 - Execution monitoring with status totals, active and long-running dispatch detection, status filters, search, optional 30-second auto-refresh, and links to activities, traces, diagnostics, pause, and delivery recovery.
+- Digital worker versions: version history, per-version details, repository permissions, capability and memory bindings, masked environment variables, and review comments.
+- SDLC details: read-only step timeline with handler roles, retries, timeouts, checklists, and gate policies.
+- Squad details: member digital workers, linked SDLCs, and executors, with member add/remove actions.
+- Scheduled task details: 30-day health, run event timeline, artifacts, comments, derived workitems, and run-level pause/resume/cancel.
+- Capability details: package metadata, installSpec, and one-click platform skill installation; executor details include model, upgrade, restart, and update capability fields.
 - Digital worker, SDLC, squad, repository/Repo Map, skill and category, scheduled task, executor, memory, and execution-record management.
 - A read-only status-template view and a runtime-generated all-tools console for the complete MCP tool set. The create-workitem form shows only type, title, and body by default, collapses the remaining fields, uses dropdowns for workspace, assignee, SDLC, squad, and priority, and keeps tool and field descriptions behind help tooltips. Resource details, document previews, execution diagnostics, status templates, and settings use responsive wide dialogs.
+- Sensitive tool results such as executor tokens, CLI tokens, and digital worker environment variables are masked by default.
 - English and Simplified Chinese interface, plus English listing metadata with a Simplified Chinese translation.
 
 ## Data and permissions

@@ -21,10 +21,13 @@ import {
   JsonBlock,
   LabeledField,
   Row,
+  SelectField,
   textStyle,
+  type FieldOption,
 } from "./components";
 import {
   asNumber,
+  asRecord,
   asString,
   displayStatus,
   errorMessage,
@@ -59,11 +62,7 @@ interface CallState {
   ok: boolean;
   data: unknown;
   message?: string;
-}
-
-interface FieldOption {
-  label: string;
-  value: string;
+  redacted?: boolean;
 }
 
 const PRIMARY_FIELDS: Record<string, string[]> = {
@@ -120,6 +119,62 @@ const TOOL_FIELD_OPTIONS: Record<string, Record<string, FieldOption[]>> = {
   "autowonder.create_skill_from_package": { type: SKILL_PACKAGE_TYPE_OPTIONS },
   "autowonder.update_skill_package": { type: SKILL_PACKAGE_TYPE_OPTIONS },
 };
+
+const TOKEN_RESULT_TOOLS = new Set([
+  "autowonder.get_executor_token",
+  "autowonder.workitem_cli_download_token",
+  "autowonder.workitem_cli_upload_token",
+]);
+const ENV_RESULT_TOOLS = new Set([
+  "autowonder.get_agent",
+  "autowonder.get_agent_version",
+]);
+
+function maskValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskValue);
+  if (typeof value !== "object" || value === null) return value;
+  const record = value as Record<string, unknown>;
+  const next: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(record)) {
+    if (/token|secret|password/i.test(key)) {
+      next[key] = "••••••";
+    } else {
+      next[key] = maskValue(item);
+    }
+  }
+  return next;
+}
+
+function maskEnvironmentVariables(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskEnvironmentVariables);
+  if (typeof value !== "object" || value === null) return value;
+  const record = value as Record<string, unknown>;
+  const next: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(record)) {
+    if (key === "environmentVariables" && Array.isArray(item)) {
+      next[key] = item.map((entry) => {
+        const env = asRecord(entry);
+        return "value" in env ? { ...env, value: "••••••" } : env;
+      });
+    } else {
+      next[key] = maskEnvironmentVariables(item);
+    }
+  }
+  return next;
+}
+
+function safeToolResult(
+  toolName: string,
+  data: unknown,
+): { data: unknown; redacted: boolean } {
+  if (TOKEN_RESULT_TOOLS.has(toolName)) {
+    return { data: maskValue(data), redacted: true };
+  }
+  if (ENV_RESULT_TOOLS.has(toolName)) {
+    return { data: maskEnvironmentVariables(data), redacted: true };
+  }
+  return { data, redacted: false };
+}
 
 const FIELD_HINTS: Record<string, string> = {
   workspaceId: "",
@@ -270,110 +325,6 @@ function ToolDescriptionTip({
             >
               {description}
             </Text>
-          </ScrollView>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function SelectField({
-  value,
-  options,
-  onChange,
-  theme,
-}: {
-  value: string;
-  options: FieldOption[];
-  onChange: (value: string) => void;
-  theme: PluginTheme;
-}) {
-  const { t } = useI18n();
-  const [open, setOpen] = useState(false);
-  const selected = options.find((option) => option.value === value);
-  return (
-    <View style={{ gap: 4 }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((current) => !current)}
-        style={({ pressed }) => ({
-          minHeight: 38,
-          paddingHorizontal: 10,
-          paddingVertical: 9,
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: open ? theme.colors.accent : theme.colors.border,
-          backgroundColor: theme.colors.surface0,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          opacity: pressed ? 0.8 : 1,
-        })}
-      >
-        <Text
-          translate={false}
-          style={{
-            flex: 1,
-            color: selected ? theme.colors.foreground : theme.colors.foregroundMuted,
-            fontSize: 12,
-          }}
-        >
-          {selected?.label ?? (value || t("请选择"))}
-        </Text>
-        <Icon
-          name={open ? "ChevronUp" : "ChevronDown"}
-          size={14}
-          color={theme.colors.foregroundMuted}
-        />
-      </Pressable>
-      {open ? (
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-            borderRadius: 8,
-            backgroundColor: theme.colors.surface1,
-            padding: 4,
-            maxHeight: 240,
-            overflow: "hidden",
-          }}
-        >
-          <ScrollView nestedScrollEnabled>
-            {options.map((option) => {
-              const active = option.value === value;
-              return (
-                <Pressable
-                  key={option.value}
-                  onPress={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  style={({ pressed }) => ({
-                    minHeight: 32,
-                    paddingHorizontal: 8,
-                    paddingVertical: 7,
-                    borderRadius: 6,
-                    backgroundColor: active || pressed ? theme.colors.surface2 : "transparent",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
-                  })}
-                >
-                  <Text
-                    translate={false}
-                    style={{
-                      flex: 1,
-                      color: active ? theme.colors.accent : theme.colors.foreground,
-                      fontSize: 12,
-                    }}
-                  >
-                    {option.label}
-                  </Text>
-                  {active ? <Icon name="Check" size={12} color={theme.colors.accent} /> : null}
-                </Pressable>
-              );
-            })}
           </ScrollView>
         </View>
       ) : null}
@@ -630,10 +581,12 @@ export function ToolRunner({
     setResult(null);
     try {
       const response = await call({ name: tool.name, arguments: args });
+      const safe = safeToolResult(tool.name, response.data);
       setResult({
         ok: !response.isError,
-        data: response.data,
+        data: safe.data,
         message: response.isError ? response.contentText ?? "工具返回错误" : undefined,
+        redacted: safe.redacted,
       });
       if (response.isError) {
         toast.error(
@@ -942,6 +895,11 @@ export function ToolRunner({
                   ? t("执行成功")
                   : result.message ?? t("执行失败")}
               </Text>
+              {result.redacted ? (
+                <Text style={{ color: theme.colors.statusWarning, fontSize: 11 }}>
+                  {t("敏感字段已打码；如需 token，请在 AutoWonder 对应页面查看。")}
+                </Text>
+              ) : null}
               <JsonBlock value={result.data} theme={theme} maxHeight={280} />
             </Card>
           ) : null}

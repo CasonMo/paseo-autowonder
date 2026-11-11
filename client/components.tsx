@@ -90,6 +90,115 @@ export function Chip({
   );
 }
 
+export interface FieldOption {
+  label: string;
+  value: string;
+}
+
+export function SelectField({
+  value,
+  options,
+  onChange,
+  theme,
+}: {
+  value: string;
+  options: FieldOption[];
+  onChange: (value: string) => void;
+  theme: PluginTheme;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value);
+  return (
+    <View style={{ gap: 4 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((current) => !current)}
+        style={({ pressed }) => ({
+          minHeight: 38,
+          paddingHorizontal: 10,
+          paddingVertical: 9,
+          borderRadius: 8,
+          borderWidth: 1,
+          borderColor: open ? theme.colors.accent : theme.colors.border,
+          backgroundColor: theme.colors.surface0,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          opacity: pressed ? 0.8 : 1,
+        })}
+      >
+        <Text
+          translate={false}
+          style={{
+            flex: 1,
+            color: selected ? theme.colors.foreground : theme.colors.foregroundMuted,
+            fontSize: 12,
+          }}
+        >
+          {selected?.label ?? (value || t("请选择"))}
+        </Text>
+        <Icon
+          name={open ? "ChevronUp" : "ChevronDown"}
+          size={14}
+          color={theme.colors.foregroundMuted}
+        />
+      </Pressable>
+      {open ? (
+        <View
+          style={{
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            borderRadius: 8,
+            backgroundColor: theme.colors.surface1,
+            padding: 4,
+            maxHeight: 240,
+            overflow: "hidden",
+          }}
+        >
+          <ScrollView nestedScrollEnabled>
+            {options.map((option) => {
+              const active = option.value === value;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                  style={({ pressed }) => ({
+                    minHeight: 32,
+                    paddingHorizontal: 8,
+                    paddingVertical: 7,
+                    borderRadius: 6,
+                    backgroundColor: active || pressed ? theme.colors.surface2 : "transparent",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                  })}
+                >
+                  <Text
+                    translate={false}
+                    style={{
+                      flex: 1,
+                      color: active ? theme.colors.accent : theme.colors.foreground,
+                      fontSize: 12,
+                    }}
+                  >
+                    {option.label}
+                  </Text>
+                  {active ? <Icon name="Check" size={12} color={theme.colors.accent} /> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function Badge({
   label,
   theme,

@@ -1,6 +1,11 @@
 import type { ResourceDef } from "./ResourceSection";
 import { WorkitemDetailExtra } from "./WorkitemDetailExtra";
 import { WorkitemQuickActions } from "./WorkitemQuickActions";
+import { SdlcDetailExtra } from "./SdlcDetailExtra";
+import { AgentDetailExtra } from "./AgentDetailExtra";
+import { SquadDetailExtra } from "./SquadDetailExtra";
+import { ScheduledTaskDetailExtra } from "./ScheduledTaskDetailExtra";
+import { SkillDetailExtra } from "./SkillDetailExtra";
 import { asString } from "./lib";
 
 export const workitemResource: ResourceDef = {
@@ -173,6 +178,7 @@ export const agentResource: ResourceDef = {
       preset: (data) => ({ id: data.id }),
     },
   ],
+  DetailExtra: AgentDetailExtra,
 };
 
 export const sdlcResource: ResourceDef = {
@@ -240,6 +246,7 @@ export const sdlcResource: ResourceDef = {
       preset: (data) => ({ id: data.id }),
     },
   ],
+  DetailExtra: SdlcDetailExtra,
 };
 
 export const squadResource: ResourceDef = {
@@ -289,6 +296,7 @@ export const squadResource: ResourceDef = {
       preset: (data) => ({ squadId: data.id }),
     },
   ],
+  DetailExtra: SquadDetailExtra,
 };
 
 export const repoResource: ResourceDef = {
@@ -407,6 +415,7 @@ export const skillResource: ResourceDef = {
       preset: (data) => ({ id: data.id }),
     },
   ],
+  DetailExtra: SkillDetailExtra,
 };
 
 export const categoryResource: ResourceDef = {
@@ -487,22 +496,6 @@ export const scheduledTaskResource: ResourceDef = {
     "version",
   ],
   contentField: "instructionMd",
-  extraSections: [
-    {
-      title: "最近运行",
-      tool: "autowonder.list_scheduled_task_runs",
-      itemsKey: "list",
-      emptyText: "暂无运行记录",
-      itemTitle: (item) => `#${asString(item.id)} · ${asString(item.status)}`,
-      fields: [
-        { key: "scheduledAt", label: "计划时间", format: "date" },
-        { key: "startedAt", label: "开始", format: "date" },
-        { key: "finishedAt", label: "结束", format: "date" },
-        { key: "resultSummary", label: "结果", multiline: true },
-        { key: "error", label: "错误", multiline: true },
-      ],
-    },
-  ],
   actions: [
     {
       label: "启用",
@@ -542,6 +535,7 @@ export const scheduledTaskResource: ResourceDef = {
       preset: (data) => ({ id: data.id, version: data.version }),
     },
   ],
+  DetailExtra: ScheduledTaskDetailExtra,
 };
 
 export const executorResource: ResourceDef = {
@@ -567,6 +561,17 @@ export const executorResource: ResourceDef = {
     "name",
     "clientKind",
     "status",
+    "model",
+    "modelName",
+    "targetVersion",
+    "launchCommandSupported",
+    "restartSupported",
+    "restartPolicySupported",
+    "updateSupported",
+    "updateRestartSupported",
+    "upgradeSupported",
+    "upgradeAvailable",
+    "versionComparable",
     "lastConnectIp",
     "lastConnectHostname",
     "lastHeartbeat",

@@ -30,7 +30,6 @@ import { ToolRunner } from "./ToolRunner";
 import {
   asNumber,
   asString,
-  formatDateTime,
   listItems,
   priorityLabel,
   statusCategoryLabel,
@@ -630,6 +629,12 @@ export function WorkitemsSection({
                     const type = asString(item.workType);
                     const priority = priorityLabel(item.priority);
                     const statusName = asString(item.statusName);
+                    const creator =
+                      asString(item.creatorName) ||
+                      asString(item.creatorDisplayName) ||
+                      "—";
+                    const creatorInitial =
+                      creator.replace(/[（(].*$/, "").trim().slice(0, 1) || "?";
                     const assignee = asString(item.assigneeLabel) || t("未指派");
                     const assigneeInitial = assignee.replace(/[（(].*$/, "").trim().slice(0, 1) || "?";
                     return (
@@ -680,31 +685,79 @@ export function WorkitemsSection({
                         >
                           {asString(item.title)}
                         </Text>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
                           <View
                             style={{
-                              width: 18,
-                              height: 18,
-                              borderRadius: 9,
-                              backgroundColor: theme.colors.surface2,
+                              flex: 1,
+                              minWidth: 0,
+                              flexDirection: "row",
                               alignItems: "center",
-                              justifyContent: "center",
+                              gap: 6,
                             }}
                           >
-                            <Text style={{ color: theme.colors.foregroundMuted, fontSize: 10 }}>
-                              {assigneeInitial}
-                            </Text>
+                            <View
+                              style={{
+                                width: 18,
+                                height: 18,
+                                borderRadius: 9,
+                                backgroundColor: theme.colors.surface2,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Text style={{ color: theme.colors.foregroundMuted, fontSize: 10 }}>
+                                {creatorInitial}
+                              </Text>
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <Text style={textStyle(theme, 9, true)}>{t("创建者")}</Text>
+                              <Text
+                                numberOfLines={1}
+                                translate={false}
+                                style={textStyle(theme, 11)}
+                              >
+                                {creator}
+                              </Text>
+                            </View>
                           </View>
-                          <Text
-                            numberOfLines={1}
-                            translate={false}
-                            style={{ ...textStyle(theme, 11, true), flex: 1 }}
+                          <View
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              justifyContent: "flex-end",
+                              gap: 6,
+                            }}
                           >
-                            {assignee}
-                          </Text>
-                          <Text style={textStyle(theme, 11, true)}>
-                            {formatDateTime(item.gmtModified)}
-                          </Text>
+                            <View style={{ flex: 1, minWidth: 0, alignItems: "flex-end" }}>
+                              <Text style={textStyle(theme, 9, true)}>{t("当前处理人")}</Text>
+                              <Text
+                                numberOfLines={1}
+                                translate={false}
+                                style={{
+                                  ...textStyle(theme, 11),
+                                  textAlign: "right",
+                                }}
+                              >
+                                {assignee}
+                              </Text>
+                            </View>
+                            <View
+                              style={{
+                                width: 18,
+                                height: 18,
+                                borderRadius: 9,
+                                backgroundColor: theme.colors.surface2,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Text style={{ color: theme.colors.foregroundMuted, fontSize: 10 }}>
+                                {assigneeInitial}
+                              </Text>
+                            </View>
+                          </View>
                         </View>
                       </Pressable>
                     );
