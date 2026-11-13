@@ -3,7 +3,7 @@ import { TextInput, useToast } from "@getpaseo/plugin/client/react-native";
 import { Icon } from "@getpaseo/plugin/client/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { Text } from "./Text";
 import { useI18n } from "./i18n";
 import { callToolRpc } from "../shared/contracts";
@@ -46,6 +46,7 @@ export function WorkitemDetailExtra({
   const [busy, setBusy] = useState<string | null>(null);
   const [commentSelection, setCommentSelection] = useState({ start: 0, end: 0 });
   const [confirmKey, setConfirmKey] = useState<string | null>(null);
+  const [showRecovery, setShowRecovery] = useState(false);
   const [showExecutions, setShowExecutions] = useState(false);
   const [expandedExecution, setExpandedExecution] = useState<number | null>(null);
   const [mentionedAgents, setMentionedAgents] = useState<
@@ -59,6 +60,7 @@ export function WorkitemDetailExtra({
     setMentionedAgents([]);
     setCommentSelection({ start: 0, end: 0 });
     setConfirmKey(null);
+    setShowRecovery(false);
     setShowExecutions(false);
     setExpandedExecution(null);
   }, [workitemId]);
@@ -89,6 +91,14 @@ export function WorkitemDetailExtra({
       .map(([status, count]) => `${displayStatus(status) || status} ${count}`)
       .join(" · ");
   }, [executions]);
+  const restartColumns = [
+    { label: "轮次", width: 48 },
+    { label: "状态", width: 100 },
+    { label: "数字员工", width: 170 },
+    { label: "操作人", width: 104 },
+    { label: "创建时间", width: 124 },
+    { label: "更新时间", width: 124 },
+  ];
 
   const agentsQuery = useQuery({
     queryKey: ["aw", workspaceId, "agentsForAssign"],
@@ -126,6 +136,19 @@ export function WorkitemDetailExtra({
     }
     return map;
   }, [agents]);
+  const dispatchAgents = useMemo(() => {
+    const map = new Map<number, { id: number; name: string }>();
+    for (const execution of executions) {
+      const dispatchId = asNumber(execution.dispatchId);
+      const agentId = asNumber(execution.agentId);
+      if (dispatchId === undefined || agentId === undefined) continue;
+      map.set(dispatchId, {
+        id: agentId,
+        name: asString(execution.agentName) || agentNames.get(agentId) || "",
+      });
+    }
+    return map;
+  }, [executions, agentNames]);
   const comments = listItems(commentsQuery.data, "items");
   const mention = useMemo(() => {
     if (commentSelection.start !== commentSelection.end) return null;
@@ -326,12 +349,33 @@ export function WorkitemDetailExtra({
       </Card>
 
       <Card theme={theme}>
-        <Row gap={6} wrap>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("交付恢复")}
+          accessibilityState={{ expanded: showRecovery }}
+          onPress={() => setShowRecovery((value) => !value)}
+          style={({ pressed }) => ({
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
           <Text style={textStyle(theme, 12, true)}>{t("交付恢复")}</Text>
           {recovery.closed === true ? (
             <Badge label={t("已关闭")} theme={theme} tone="muted" />
           ) : null}
           <Badge label={String(executions.length)} theme={theme} tone="accent" />
+          <View style={{ flex: 1 }} />
+          <Icon
+            name={showRecovery ? "ChevronUp" : "ChevronDown"}
+            size={14}
+            color={theme.colors.foregroundMuted}
+          />
+        </Pressable>
+        {showRecovery ? (
+          <>
+        <Row gap={6} wrap>
           <Button
             label={
               showExecutions
@@ -520,22 +564,175 @@ export function WorkitemDetailExtra({
           })
         ) : null}
         {restarts.length > 0 ? (
-          <View style={{ gap: 3 }}>
+          <View style={{ gap: 4 }}>
             <Divider theme={theme} />
             <Text style={textStyle(theme, 11, true)}>
               {t("重启记录")} · {restarts.length}
             </Text>
-            {restarts.map((restart, index) => (
-              <Text
-                key={String(asString(restart.id) || index)}
-                selectable
-                translate={false}
-                style={textStyle(theme, 10, true)}
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator
+              style={{ maxWidth: "100%" }}
+            >
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 6,
+                  overflow: "hidden",
+                }}
               >
-                {formatValue(restart)}
-              </Text>
-            ))}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    backgroundColor: theme.colors.surface2,
+                  }}
+                >
+                  {restartColumns.map((column, columnIndex) => (
+                    <View
+                      key={column.label}
+                      style={{
+                        width: column.width,
+                        paddingHorizontal: 8,
+                        paddingVertical: 6,
+                        borderRightWidth:
+                          columnIndex === restartColumns.length - 1 ? 0 : 1,
+                        borderRightColor: theme.colors.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: theme.colors.foreground,
+                          fontSize: 11,
+                          fontWeight: "600",
+                        }}
+                      >
+                        {t(column.label)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                {restarts.map((restart, index) => {
+                  const restartStatus = asString(restart.status);
+                  const stopReason = asString(restart.stop_reason);
+                  const operatorId = asString(restart.requested_by);
+                  const operatorType = asString(restart.operator_type);
+                  const dispatchId = asNumber(restart.dispatch_id);
+                  const dispatchAgent =
+                    dispatchId !== undefined
+                      ? dispatchAgents.get(dispatchId)
+                      : undefined;
+                  const agentId =
+                    asNumber(restart.agent_id) ?? dispatchAgent?.id;
+                  const agentName =
+                    asString(restart.agent_name) ||
+                    dispatchAgent?.name ||
+                    (agentId !== undefined ? agentNames.get(agentId) : "") ||
+                    "";
+                  const cells: { text: string; color: string; subtext?: string }[] = [
+                    {
+                      text:
+                        asString(restart.restart_round) || String(index + 1),
+                      color: theme.colors.foreground,
+                    },
+                    {
+                      text: restartStatus
+                        ? t(displayStatus(restartStatus))
+                        : "—",
+                      color:
+                        restartStatus === "FAILED" || restartStatus === "ERROR"
+                          ? theme.colors.statusDanger
+                          : restartStatus === "STARTED"
+                            ? theme.colors.accent
+                            : theme.colors.foregroundMuted,
+                      subtext: stopReason || undefined,
+                    },
+                    {
+                      text:
+                        agentId !== undefined
+                          ? `${agentName || t("数字员工")} #${agentId}`
+                          : dispatchId !== undefined
+                            ? `#${dispatchId}`
+                            : "—",
+                      color: agentId !== undefined
+                        ? theme.colors.foreground
+                        : theme.colors.foregroundMuted,
+                    },
+                    {
+                      text: operatorId
+                        ? `#${operatorId}${operatorType ? ` · ${t(displayStatus(operatorType))}` : ""}`
+                        : "—",
+                      color: operatorId
+                        ? theme.colors.foreground
+                        : theme.colors.foregroundMuted,
+                    },
+                    {
+                      text: asString(restart.gmt_create)
+                        ? formatDateTime(restart.gmt_create)
+                        : "—",
+                      color: theme.colors.foreground,
+                    },
+                    {
+                      text: asString(restart.gmt_modified)
+                        ? formatDateTime(restart.gmt_modified)
+                        : "—",
+                      color: theme.colors.foreground,
+                    },
+                  ];
+                  return (
+                    <View
+                      key={String(asString(restart.id) || index)}
+                      style={{
+                        flexDirection: "row",
+                        borderTopWidth: 1,
+                        borderTopColor: theme.colors.border,
+                        backgroundColor:
+                          index % 2 === 1 ? theme.colors.surface0 : "transparent",
+                      }}
+                    >
+                      {cells.map((cell, columnIndex) => (
+                        <View
+                          key={restartColumns[columnIndex]?.label ?? columnIndex}
+                          style={{
+                            width: restartColumns[columnIndex]?.width,
+                            paddingHorizontal: 8,
+                            paddingVertical: 6,
+                            borderRightWidth:
+                              columnIndex === restartColumns.length - 1 ? 0 : 1,
+                            borderRightColor: theme.colors.border,
+                          }}
+                        >
+                          <Text
+                            selectable
+                            translate={false}
+                            style={{ color: cell.color, fontSize: 11 }}
+                          >
+                            {cell.text}
+                          </Text>
+                          {cell.subtext ? (
+                            <Text
+                              selectable
+                              translate={false}
+                              style={{
+                                color: theme.colors.statusDanger,
+                                fontSize: 10,
+                                lineHeight: 14,
+                              }}
+                            >
+                              {cell.subtext}
+                            </Text>
+                          ) : null}
+                        </View>
+                      ))}
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
           </View>
+        ) : null}
+          </>
         ) : null}
       </Card>
 

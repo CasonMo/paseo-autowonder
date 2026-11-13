@@ -127,6 +127,8 @@ const STATUS_LABELS: Record<string, string> = {
   BUSY: "忙碌",
   DRAFT: "草稿",
   RUNNING: "运行中",
+  STARTED: "已启动",
+  STOPPED: "已停止",
   SUCCEEDED: "成功",
   FAILED: "失败",
   CANCELED: "已取消",
